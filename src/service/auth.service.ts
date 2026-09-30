@@ -17,7 +17,6 @@ interface SignUpInput {
   name: string;
   email: string;
   password: string;
-  culturalGroupId?: number;
   preferredLanguage?: string;
 }
 
@@ -37,7 +36,6 @@ export const signUpService = async (data: SignUpInput) => {
       data.name.trim(),
       email,
       hashedPassword,
-      data.culturalGroupId ?? null,
       data.preferredLanguage ?? "en",
     ]);
     user = rows[0];

@@ -13,6 +13,12 @@ import eventRoutes from "../src/routes/event.routes";
 import personRoutes from "../src/routes/people.routes";
 import placeRoutes from "../src/routes/places.routes";
 import eventPeopleRoutes from "../src/routes/eventPeople.routes";
+import eventPlaceRoutes from "../src/routes/eventPlace.routes";
+import artifactRoutes from "../src/routes/artifacts.routes";
+import mediaRoutes from "../src/routes/media.routes";
+import mediaAttachmentRoutes from "../src/routes/mediaAttachment.routes";
+import sourceRoutes from "../src/routes/source.routes";
+import sourceLinkRoutes from "src/routes/sourceLink.routes";
 
 dotenv.config();
 
@@ -38,6 +44,12 @@ app.use("/events", eventRoutes);
 app.use("/people", personRoutes);
 app.use("/places", placeRoutes);
 app.use("/", eventPeopleRoutes);
+app.use("/", eventPlaceRoutes);
+app.use("/artifacts", artifactRoutes);
+app.use("/media", mediaRoutes);
+app.use("/media-attachment", mediaAttachmentRoutes);
+app.use("/sources", sourceRoutes);
+app.use("/source-links", sourceLinkRoutes);
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

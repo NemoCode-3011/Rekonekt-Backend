@@ -8,10 +8,9 @@ export const createUserQuery = `
     name,
     email,
     password,
-    cultural_group_id,
     preferred_language
   )
-  VALUES($1, $2, $3, $4, $5)
+  VALUES($1, $2, $3, $4)
   RETURNING id, name, email, role, cultural_group_id, preferred_language, created_at;
 `;
 export const updateUserVerifiedQuery = `

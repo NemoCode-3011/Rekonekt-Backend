@@ -74,8 +74,7 @@ export const deleteExhibitionService = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateExhibitionService = async (
-  id: number,
+export const updateExhibitionService = async (id: number,
   data: {
     title: string;
     slug: string;
@@ -107,7 +106,6 @@ export const updateExhibitionService = async (
     if (error.code === "23505") {
       throw new Error("Exhibition slug already exists");
     }
-
     throw error;
   }
 };

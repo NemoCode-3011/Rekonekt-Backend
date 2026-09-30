@@ -12,7 +12,7 @@ import { deleteExhibitionService } from "src/service/exhibitions.service";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, culturalGroupId, preferredLanguage } =
+    const { name, email, password, preferredLanguage } =
       req.body ?? {};
 
     if (!name || typeof name !== "string") {
@@ -31,7 +31,6 @@ export const signUpController = async (req: Request, res: Response) => {
       name,
       email,
       password,
-      culturalGroupId,
       preferredLanguage,
     });
 
