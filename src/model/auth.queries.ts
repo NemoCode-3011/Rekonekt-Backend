@@ -83,6 +83,35 @@ export const getUserByGoogleIdQuery = `
   WHERE google_id = $1;
 `;
 
+export const getUserByEmailForGoogleQuery = `
+  SELECT
+    id,
+    name,
+    email,
+    role,
+    preferred_language,
+    is_verified,
+    google_id
+  FROM users
+  WHERE email = $1;
+`;
+
+export const linkGoogleAccountQuery = `
+  UPDATE users
+  SET
+    google_id = $1,
+    is_verified = TRUE,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE id = $2
+  RETURNING
+    id,
+    name,
+    email,
+    role,
+    preferred_language,
+    is_verified;
+`;
+
 export const createGoogleUserQuery = `
   INSERT INTO users (
     name,
