@@ -71,3 +71,33 @@ export const createAdminQuery = `
     is_verified,
     created_at;
 `;
+export const getUserByGoogleIdQuery = `
+  SELECT
+    id,
+    name,
+    email,
+    role,
+    preferred_language,
+    is_verified
+  FROM users
+  WHERE google_id = $1;
+`;
+
+export const createGoogleUserQuery = `
+  INSERT INTO users (
+    name,
+    email,
+    password,
+    google_id,
+    is_verified,
+    preferred_language
+  )
+  VALUES ($1, $2, $3, $4, TRUE, 'en')
+  RETURNING
+    id,
+    name,
+    email,
+    role,
+    preferred_language,
+    is_verified;
+`;

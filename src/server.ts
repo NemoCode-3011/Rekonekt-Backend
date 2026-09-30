@@ -19,6 +19,10 @@ import mediaRoutes from "../src/routes/media.routes";
 import mediaAttachmentRoutes from "../src/routes/mediaAttachment.routes";
 import sourceRoutes from "../src/routes/source.routes";
 import sourceLinkRoutes from "src/routes/sourceLink.routes";
+import bookmarkRoutes from "src/routes/bookmarks.routes";
+import noteRoutes from "src/routes/note.routes";
+import progressRoutes from "src/routes/progress.routes";
+import googleAuthRoutes from "src/routes/googleAuth.routes";
 
 dotenv.config();
 
@@ -50,6 +54,12 @@ app.use("/media", mediaRoutes);
 app.use("/media-attachment", mediaAttachmentRoutes);
 app.use("/sources", sourceRoutes);
 app.use("/source-links", sourceLinkRoutes);
+app.use("/bookmarks", bookmarkRoutes);
+app.use("/notes", noteRoutes);
+app.use("/progress", progressRoutes);
+app.use("/auth/google", googleAuthRoutes);
+
+
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

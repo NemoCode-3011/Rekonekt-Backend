@@ -23,6 +23,7 @@ import {
   createNotesTable,
   createProgressTable,
   alterUsersTableAddIsVerified,
+  alterUsersTableAddGoogleId,
 } from "./queries";
 
 dotenv.config();
@@ -86,6 +87,8 @@ export const createTables = async () => {
     console.log("progress table created");
     await client.query(alterUsersTableAddIsVerified);
     console.log("user table altered");
+    await client.query(alterUsersTableAddGoogleId)
+    console.log("users table altered for google")
   } catch (error) {
     console.error("Error creating tables:", error);
     throw error;
