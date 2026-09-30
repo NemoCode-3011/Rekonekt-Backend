@@ -6,6 +6,10 @@ import authRoutes from "../src/routes/auth.routes";
 import { connectRedis } from "@config/redis";
 import cookieParser from "cookie-parser";
 import adminRoutes from "../src/routes/admin.routes"
+import exhibitRoutes from "../src/routes/exhibitions.routes"
+import sectionRoutes from "../src/routes/sections.routes"
+import storyRoutes from "../src/routes/stories.routes"
+import eventRoutes from "../src/routes/event.routes"
 
 dotenv.config();
 
@@ -24,6 +28,10 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 app.use("/admin",adminRoutes)
+app.use("/exhibitions", exhibitRoutes)
+app.use("/sections", sectionRoutes);
+app.use("/stories", storyRoutes);
+app.use("/events", eventRoutes);
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

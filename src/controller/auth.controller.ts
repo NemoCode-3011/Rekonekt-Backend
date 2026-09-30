@@ -8,6 +8,7 @@ import {
 } from "../service/auth.service";
 import { sendResponse } from "../utils/response";
 import { signInService } from "src/service/auth.service";
+import { deleteExhibitionService } from "src/service/exhibitions.service";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
@@ -191,6 +192,33 @@ export const createAdminController = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.message === "Email already exists") {
       return sendResponse(res, 409, error.message);
+    }
+
+    console.log(error.message || error);
+
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const deleteExhibitionController = async (req: Request,res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid exhibition ID");
+    }
+
+    const result = await deleteExhibitionService(id);
+
+    return sendResponse(
+      res,
+      200,
+      "Exhibition deleted successfully",
+      result
+    );
+  } catch (error: any) {
+    if (error.message === "Exhibition not found") {
+      return sendResponse(res, 404, error.message);
     }
 
     console.log(error.message || error);
