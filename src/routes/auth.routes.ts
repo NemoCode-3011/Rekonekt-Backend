@@ -1,8 +1,11 @@
 import { Router } from "express";
 import {
   createAdminController,
+  forgotPasswordController,
   getCurrentUserController,
   logoutController,
+  resendOtpController,
+  resetPasswordController,
   signInController,
   signUpController,
   verifyOtpController,
@@ -18,4 +21,7 @@ router.post("/signin", signInController);
 router.get("/me", verifyUser, getCurrentUserController);
 router.post("/logout", logoutController);
 router.post("/admins", verifyUser, requireSuperAdmin, createAdminController);
+router.post("/resend-otp", resendOtpController);
+router.post("/forgot-password", forgotPasswordController);
+router.post("/reset-password", resetPasswordController);
 export default router;

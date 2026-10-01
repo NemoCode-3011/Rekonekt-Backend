@@ -1,3 +1,4 @@
+import { requireRole } from "@middleware/authorize";
 import { Router } from "express";
 import {
   createMediaAttachmentController,
@@ -11,14 +12,14 @@ import { requireSuperAdmin } from "src/middleware/role.middleware";
 
 const router = Router();
 
-router.post("/",verifyUser,requireSuperAdmin,createMediaAttachmentController,);
+router.post("/",verifyUser,requireRole("admin", "super admin"),createMediaAttachmentController,);
 
 router.get("/", getMediaAttachmentsController);
 
 router.get("/:id", getMediaAttachmentByIdController);
 
-router.patch( "/:id", verifyUser, requireSuperAdmin, updateMediaAttachmentController,);
+router.patch( "/:id", verifyUser, requireRole("admin", "super admin"), updateMediaAttachmentController,);
 
-router.delete("/:id",verifyUser,requireSuperAdmin,deleteMediaAttachmentController,);
+router.delete("/:id",verifyUser,requireRole("admin", "super admin"),deleteMediaAttachmentController,);
 
 export default router;

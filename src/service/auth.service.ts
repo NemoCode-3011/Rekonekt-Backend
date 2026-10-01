@@ -7,12 +7,14 @@ import {
   createUserQuery,
   getUserByEmail,
   getUserById,
+  updateUserPasswordQuery,
   updateUserVerifiedQuery,
 } from "../model/auth.queries";
 import { sendOtpEmail } from "../utils/email"; // change to where your email function lives
 import { otpGenerator } from "@utils/otpGenerator";
 import { createSession } from "@utils/sessions";
-
+import { getUserForResendOtpQuery } from "../model/auth.queries";
+import { deleteUserSessions } from "../utils/sessions";
 interface SignUpInput {
   name: string;
   email: string;
@@ -168,4 +170,76 @@ export const createAdminService = async (data: {
   } finally {
     client.release();
   }
+};
+
+export const resendOtpService = async (email: string) => {
+  const result = await pool.query(getUserForResendOtpQuery, [email]);
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.is_verified) {
+    throw new Error("Email is already verified");
+  }
+
+  const otp = otpGenerator();
+
+  await redisClient.set(`otp:${email}`, otp, { EX: 300 });
+
+  await sendOtpEmail(email, otp);
+
+  return {
+    email: user.email,
+  };
+};
+export const forgotPasswordService = async (email: string) => {
+  const result = await pool.query(getUserByEmail, [email]);
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const otp = otpGenerator();
+
+  await redisClient.set(`password-reset:${email}`, otp, { EX: 300 });
+
+  await sendOtpEmail(email, otp);
+
+  return {
+    email: user.email,
+  };
+};
+
+export const resetPasswordService = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+) => {
+  const storedOtp = await redisClient.get(`password-reset:${email}`);
+
+  if (!storedOtp || storedOtp !== otp) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  const result = await pool.query(updateUserPasswordQuery, [
+    hashedPassword,
+    email,
+  ]);
+
+  if (!result.rows[0]) {
+    throw new Error("User not found");
+  }
+
+  await redisClient.del(`password-reset:${email}`);
+
+  await deleteUserSessions(result.rows[0].id);
+
+  return result.rows[0];
 };

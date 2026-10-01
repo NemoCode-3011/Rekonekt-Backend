@@ -1,3 +1,4 @@
+import { requireRole } from "@middleware/authorize";
 import { Router } from "express";
 
 import {
@@ -9,18 +10,18 @@ import {
 } from "src/controller/event.controller";
 
 import { verifyUser } from "src/middleware/auth.middleware";
-import { requireSuperAdmin } from "src/middleware/role.middleware";
+
 
 const router = Router();
 
-router.post("/", verifyUser, requireSuperAdmin, createEventController);
+router.post("/", verifyUser, requireRole("admin", "super admin"), createEventController);
 
 router.get("/sections/:sectionId", getEventsBySectionController);
 
 router.get("/:id", getEventByIdController);
 
-router.patch("/:id", verifyUser, requireSuperAdmin, updateEventController);
+router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateEventController);
 
-router.delete("/:id", verifyUser, requireSuperAdmin, deleteEventController);
+router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deleteEventController);
 
 export default router;

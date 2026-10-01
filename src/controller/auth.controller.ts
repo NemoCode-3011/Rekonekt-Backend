@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import {
   createAdminService,
+  forgotPasswordService,
   getCurrentUserService,
   logoutService,
+  resendOtpService,
+  resetPasswordService,
   signUpService,
   verifyOtpService,
 } from "../service/auth.service";
@@ -12,8 +15,7 @@ import { deleteExhibitionService } from "src/service/exhibitions.service";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, preferredLanguage } =
-      req.body ?? {};
+    const { name, email, password, preferredLanguage } = req.body ?? {};
 
     if (!name || typeof name !== "string") {
       return sendResponse(res, 400, "Name is required");
@@ -98,7 +100,6 @@ export const signInController = async (req: Request, res: Response) => {
       name: results.name,
       email: results.email,
       role: results.role,
-      cultural_group_id: results.cultural_group_id,
       preferred_language: results.preferred_language,
       is_verified: results.is_verified,
     });
@@ -199,7 +200,10 @@ export const createAdminController = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteExhibitionController = async (req: Request,res: Response) => {
+export const deleteExhibitionController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const id = Number(req.params.id);
 
@@ -209,12 +213,7 @@ export const deleteExhibitionController = async (req: Request,res: Response) => 
 
     const result = await deleteExhibitionService(id);
 
-    return sendResponse(
-      res,
-      200,
-      "Exhibition deleted successfully",
-      result
-    );
+    return sendResponse(res, 200, "Exhibition deleted successfully", result);
   } catch (error: any) {
     if (error.message === "Exhibition not found") {
       return sendResponse(res, 404, error.message);
@@ -223,5 +222,52 @@ export const deleteExhibitionController = async (req: Request,res: Response) => 
     console.log(error.message || error);
 
     return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const resendOtpController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return sendResponse(res, 400, "Email is required");
+    }
+
+    const result = await resendOtpService(email);
+
+    return sendResponse(res, 200, "Verification OTP sent successfully", result);
+  } catch (error: any) {
+    console.log(error.message || error);
+
+    return sendResponse(res, 400, error.message || "Failed to resend OTP");
+  }
+};
+export const forgotPasswordController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return sendResponse(res, 400, "Email is required");
+    }
+
+    await forgotPasswordService(email);
+
+    return sendResponse(res, 200, "Password reset OTP sent successfully");
+  } catch (error: any) {
+    return sendResponse(res, 400, error.message || "Failed to send reset OTP");
+  }
+};
+export const resetPasswordController = async (req: Request, res: Response) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return sendResponse(res, 400, "Email, OTP and new password are required");
+    }
+
+    const user = await resetPasswordService(email, otp, newPassword);
+
+    return sendResponse(res, 200, "Password reset successfully", user);
+  } catch (error: any) {
+    return sendResponse(res, 400, error.message || "Failed to reset password");
   }
 };

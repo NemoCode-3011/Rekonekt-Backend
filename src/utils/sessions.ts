@@ -14,3 +14,19 @@ export const createSession = async (userId: number) => {
 
   return sessionId;
 };
+
+export const deleteUserSessions = async (userId: number) => {
+  const keys = await redisClient.keys("session:*");
+
+  for (const key of keys) {
+    const session = await redisClient.get(key);
+
+    if (!session) continue;
+
+    const parsedSession = JSON.parse(session);
+
+    if (parsedSession.userId === userId) {
+      await redisClient.del(key);
+    }
+  }
+};

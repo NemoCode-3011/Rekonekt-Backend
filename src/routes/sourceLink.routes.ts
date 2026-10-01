@@ -1,3 +1,4 @@
+import { requireRole } from "@middleware/authorize";
 import { Router } from "express";
 import {
   createSourceLinkController,
@@ -11,19 +12,14 @@ import { requireSuperAdmin } from "src/middleware/role.middleware";
 
 const router = Router();
 
-router.post("/", verifyUser, requireSuperAdmin, createSourceLinkController);
+router.post("/", verifyUser, requireRole("admin", "super admin"), createSourceLinkController);
 
-router.get("/", verifyUser, requireSuperAdmin, getSourceLinksController);
+router.get("/", verifyUser, requireRole("admin", "super admin"), getSourceLinksController);
 
-router.get("/:id", verifyUser, requireSuperAdmin, getSourceLinkByIdController);
+router.get("/:id", verifyUser, requireRole("admin", "super admin"), getSourceLinkByIdController);
 
-router.patch("/:id", verifyUser, requireSuperAdmin, updateSourceLinkController);
+router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateSourceLinkController);
 
-router.delete(
-  "/:id",
-  verifyUser,
-  requireSuperAdmin,
-  deleteSourceLinkController,
-);
+router.delete("/:id",verifyUser, requireRole("admin", "super admin"), deleteSourceLinkController,);
 
 export default router;

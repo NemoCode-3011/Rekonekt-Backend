@@ -10,17 +10,18 @@ import {
 
 import { verifyUser } from "src/middleware/auth.middleware";
 import { requireSuperAdmin } from "src/middleware/role.middleware";
+import { requireRole } from "@middleware/authorize";
 
 const router = Router();
 
-router.post("/", verifyUser, requireSuperAdmin, createPersonController);
+router.post("/", verifyUser, requireRole("admin", "super admin"), createPersonController);
 
 router.get("/", getPeopleController);
 
 router.get("/:id", getPersonByIdController);
 
-router.patch("/:id", verifyUser, requireSuperAdmin, updatePersonController);
+router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updatePersonController);
 
-router.delete("/:id", verifyUser, requireSuperAdmin, deletePersonController);
+router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deletePersonController);
 
 export default router;

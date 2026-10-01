@@ -8,17 +8,18 @@ import {
 } from "../controller/places.controller";
 import { verifyUser } from "src/middleware/auth.middleware";
 import { requireSuperAdmin } from "src/middleware/role.middleware";
+import { requireRole } from "@middleware/authorize";
 
 const router = Router();
 
-router.post("/", verifyUser, requireSuperAdmin, createPlaceController);
+router.post("/", verifyUser, requireRole("admin", "super admin"), createPlaceController);
 
 router.get("/", getPlacesController);
 
 router.get("/:id", getPlaceByIdController);
 
-router.patch("/:id", verifyUser, requireSuperAdmin, updatePlaceController);
+router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updatePlaceController);
 
-router.delete("/:id", verifyUser, requireSuperAdmin, deletePlaceController);
+router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deletePlaceController);
 
 export default router;

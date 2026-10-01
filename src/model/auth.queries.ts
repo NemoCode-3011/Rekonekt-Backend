@@ -130,3 +130,16 @@ export const createGoogleUserQuery = `
     preferred_language,
     is_verified;
 `;
+export const getUserForResendOtpQuery = `
+  SELECT id, name, email, is_verified
+  FROM users
+  WHERE email = $1;
+`;
+export const updateUserPasswordQuery = `
+  UPDATE users
+  SET
+    password = $1,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE email = $2
+  RETURNING id, name, email, role;
+`;
