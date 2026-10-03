@@ -8,32 +8,30 @@ import {
   updateEventService,
   deleteEventService,
 } from "src/service/event.service";
+import {
+  createEventSchema,
+  updateEventSchema,
+} from "src/validation/event.schema";
 
 export const createEventController = async (req: Request, res: Response) => {
-  const {
-    sectionId,
-    title,
-    slug,
-    description,
-    eventDate,
-    dateDisplay,
-    imageUrl,
-  } = req.body;
-
   try {
-    if (!sectionId) {
-      return sendResponse(res, 400, "Section ID is required");
+    const validation = createEventSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!title) {
-      return sendResponse(res, 400, "Title is required");
-    }
+    const {
+      sectionId,
+      title,
+      slug,
+      description,
+      eventDate,
+      dateDisplay,
+      imageUrl,
+    } = validation.data;
 
-    if (!slug) {
-      return sendResponse(res, 400, "Slug is required");
-    }
-
-    const result = await createEventService({
+    const event = await createEventService({
       sectionId,
       title,
       slug,
@@ -43,20 +41,17 @@ export const createEventController = async (req: Request, res: Response) => {
       imageUrl,
     });
 
-    return sendResponse(res, 201, "Event created successfully", result);
+    return sendResponse(res, 201, "Event created successfully", event);
   } catch (error: any) {
-    if (
-      error.message === "Section not found" ||
-      error.message === "Event slug already exists in this section"
-    ) {
-      return sendResponse(res, 409, error.message);
+    console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Event slug already exists");
     }
 
-    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
-
 export const getEventsBySectionController = async (
   req: Request,
   res: Response,
@@ -99,55 +94,26 @@ export const getEventByIdController = async (req: Request, res: Response) => {
 };
 
 export const updateEventController = async (req: Request, res: Response) => {
-  const {
-    sectionId,
-    title,
-    slug,
-    description,
-    eventDate,
-    dateDisplay,
-    imageUrl,
-  } = req.body;
-
   try {
-    const id = Number(req.params.id);
+    const validation = updateEventSchema.safeParse(req.body);
 
-    if (Number.isNaN(id)) {
-      return sendResponse(res, 400, "Invalid event ID");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!sectionId) {
-      return sendResponse(res, 400, "Section ID is required");
-    }
+    const event = await updateEventService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateEventService>[1],
+    );
 
-    if (!title || !slug) {
-      return sendResponse(res, 400, "Title and slug are required");
-    }
-
-    const result = await updateEventService(id, {
-      sectionId,
-      title,
-      slug,
-      description,
-      eventDate,
-      dateDisplay,
-      imageUrl,
-    });
-
-    return sendResponse(res, 200, "Event updated successfully", result);
+    return sendResponse(res, 200, "Event updated successfully", event);
   } catch (error: any) {
-    if (
-      error.message === "Event not found" ||
-      error.message === "Section not found"
-    ) {
-      return sendResponse(res, 404, error.message);
-    }
-
-    if (error.message === "Event slug already exists in this section") {
-      return sendResponse(res, 409, error.message);
-    }
-
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Event slug already exists");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

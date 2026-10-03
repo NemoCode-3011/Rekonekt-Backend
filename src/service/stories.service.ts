@@ -39,13 +39,8 @@ export const createStoryService = async (data: {
   }
 };
 
-export const getStoriesBySectionService = async (
-  sectionId: number
-) => {
-  const result = await pool.query(
-    getStoriesBySectionQuery,
-    [sectionId]
-  );
+export const getStoriesBySectionService = async (sectionId: number) => {
+  const result = await pool.query(getStoriesBySectionQuery, [sectionId]);
 
   return result.rows;
 };
@@ -69,19 +64,17 @@ export const updateStoryService = async (
     excerpt?: string;
     content?: string;
     coverImageUrl?: string;
-  }
+  },
 ) => {
   try {
     const result = await pool.query(updateStoryQuery, [
-      data.sectionId,
       data.title,
       data.slug,
-      data.excerpt ?? null,
-      data.content ?? null,
-      data.coverImageUrl ?? null,
+      data.excerpt,
+      data.content,
+      data.coverImageUrl,
       id,
     ]);
-
     if (result.rows.length === 0) {
       throw new Error("Story not found");
     }

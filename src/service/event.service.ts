@@ -72,13 +72,12 @@ export const updateEventService = async (
 ) => {
   try {
     const result = await pool.query(updateEventQuery, [
-      data.sectionId,
       data.title,
       data.slug,
-      data.description ?? null,
-      data.eventDate ?? null,
-      data.dateDisplay ?? null,
-      data.imageUrl ?? null,
+      data.description,
+      data.eventDate,
+      data.dateDisplay,
+      data.imageUrl,
       id,
     ]);
 

@@ -27,13 +27,13 @@ export const getSourceLinkByIdQuery = `
 export const updateSourceLinkQuery = `
   UPDATE source_links
   SET
-    source_id = $1,
-    section_id = $2,
-    event_id = $3,
-    person_id = $4,
-    artifact_id = $5,
-    relationship = $6,
-    display_order = $7
+    source_id = COALESCE($1, source_id),
+    section_id = COALESCE($2, section_id),
+    event_id = COALESCE($3, event_id),
+    person_id = COALESCE($4, person_id),
+    artifact_id = COALESCE($5, artifact_id),
+    relationship = COALESCE($6, relationship),
+    display_order = COALESCE($7, display_order)
   WHERE id = $8
   RETURNING *;
 `;

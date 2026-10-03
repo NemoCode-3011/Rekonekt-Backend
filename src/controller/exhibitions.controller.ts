@@ -5,8 +5,11 @@ import {
   createExhibitionService,
   publishExhibitionService,
   updateExhibitionService,
+  deleteExhibitionService,
 } from "../service/exhibitions.service";
 import { sendResponse } from "src/utils/response";
+import { createExhibitionSchema, updateExhibitionSchema } from "src/validation/exhibition.schema";
+
 
 export const getPublishedExhibitionsController = async (
   req: Request,
@@ -49,30 +52,25 @@ export const getExhibitionBySlugController = async (
   }
 };
 
-export const createExhibitionController = async (
-  req: Request,
-  res: Response,
-) => {
-  const {
-    title,
-    slug,
-    subtitle,
-    description,
-    startDate,
-    endDate,
-    coverImageUrl,
-  } = req.body;
-
+export const createExhibitionController = async (req: Request, res: Response) => {
   try {
-    if (!title) {
-      return sendResponse(res, 400, "Title is required");
+    const validation = createExhibitionSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!slug) {
-      return sendResponse(res, 400, "Slug is required");
-    }
+    const {
+      title,
+      slug,
+      subtitle,
+      description,
+      startDate,
+      endDate,
+      coverImageUrl,
+    } = validation.data;
 
-    const result = await createExhibitionService({
+    const exhibition = await createExhibitionService({
       title,
       slug,
       subtitle,
@@ -82,13 +80,18 @@ export const createExhibitionController = async (
       coverImageUrl,
     });
 
-    return sendResponse(res, 201, "Exhibition created successfully", result);
+    return sendResponse(
+      res,
+      201,
+      "Exhibition created successfully",
+      exhibition,
+    );
   } catch (error: any) {
-    if (error.message === "Exhibition slug already exists") {
-      return sendResponse(res, 409, error.message);
-    }
-
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Exhibition slug already exists");
+    }
 
     return sendResponse(res, 500, "Internal server error");
   }
@@ -123,42 +126,29 @@ export const updateExhibitionController = async (
   req: Request,
   res: Response,
 ) => {
-  const {
-    title,
-    slug,
-    subtitle,
-    description,
-    startDate,
-    endDate,
-    coverImageUrl,
-  } = req.body;
-
   try {
-    const id = Number(req.params.id);
+    const validation = updateExhibitionSchema.safeParse(req.body);
 
-    if (Number.isNaN(id)) {
-      return sendResponse(res, 400, "Invalid exhibition ID");
-    }
+if (!validation.success) {
+  return sendResponse(
+    res,
+    400,
+    validation.error.issues[0].message
+  );
+}
 
-    if (!title) {
-      return sendResponse(res, 400, "Title is required");
-    }
+const exhibition = await updateExhibitionService(
+  Number(req.params.id),
+  validation.data as Parameters<typeof updateExhibitionService>[1],
+);
 
-    if (!slug) {
-      return sendResponse(res, 400, "Slug is required");
-    }
+return sendResponse(
+  res,
+  200,
+  "Exhibition updated successfully",
+  exhibition
+);
 
-    const result = await updateExhibitionService(id, {
-      title,
-      slug,
-      subtitle,
-      description,
-      startDate,
-      endDate,
-      coverImageUrl,
-    });
-
-    return sendResponse(res, 200, "Exhibition updated successfully", result);
   } catch (error: any) {
     if (error.message === "Exhibition not found") {
       return sendResponse(res, 404, error.message);
@@ -169,6 +159,30 @@ export const updateExhibitionController = async (
     }
 
     console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const deleteExhibitionController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid exhibition ID");
+    }
+
+    const result = await deleteExhibitionService(id);
+
+    return sendResponse(res, 200, "Exhibition deleted successfully", result);
+  } catch (error: any) {
+    if (error.message === "Exhibition not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

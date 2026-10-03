@@ -1,29 +1,31 @@
 import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import {
-  createNote,
-  getNotesByUser,
-  getNoteById,
-  updateNote,
-  deleteNote,
+  createNoteService,
+  getNotesByUserService,
+  getNoteByIdService,
+  updateNoteService,
+  deleteNoteService,
 } from "src/service/note.service";
+import { createNoteSchema, updateNoteSchema } from "../validation/notes.schema";
 
 export const createNoteController = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId;
-    const { title, content, noteDate } = req.body;
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    if (!content) {
-      return sendResponse(res, 400, "Content is required");
+    const validation = createNoteSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const note = await createNote(
-      userId,
-      title || null,
+    const { title, content, noteDate } = validation.data;
+
+    const note = await createNoteService(
+      req.userId,
+      title,
       content,
       noteDate || null,
     );
@@ -31,106 +33,155 @@ export const createNoteController = async (req: Request, res: Response) => {
     return sendResponse(res, 201, "Note created successfully", note);
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to create note");
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
-export const getNotesController = async (req: Request, res: Response) => {
+export const getNotesController = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const userId = req.userId;
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const notes = await getNotesByUser(userId);
+    const notes = await getNotesByUserService(req.userId);
 
-    return sendResponse(res, 200, "Notes retrieved successfully", notes);
+    return sendResponse(
+      res,
+      200,
+      "Notes retrieved successfully",
+      notes
+    );
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to retrieve notes");
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
-export const getNoteByIdController = async (req: Request, res: Response) => {
+export const getNoteByIdController = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const userId = req.userId;
-    const id = Number(req.params.id);
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const note = await getNoteById(id, userId);
-
-    if (!note) {
-      return sendResponse(res, 404, "Note not found");
-    }
-
-    return sendResponse(res, 200, "Note retrieved successfully", note);
-  } catch (error: any) {
-    console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to retrieve note");
-  }
-};
-
-export const updateNoteController = async (req: Request, res: Response) => {
-  try {
-    const userId = req.userId;
     const id = Number(req.params.id);
 
-    const { title, content, noteDate } = req.body;
-
-    if (!userId) {
-      return sendResponse(res, 401, "Authentication required");
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendResponse(res, 400, "Invalid note ID");
     }
 
-    if (!content) {
-      return sendResponse(res, 400, "Content is required");
-    }
-
-    const note = await updateNote(
+    const note = await getNoteByIdService(
       id,
-      userId,
-      title || null,
-      content,
-      noteDate || null,
+      req.userId
     );
 
     if (!note) {
       return sendResponse(res, 404, "Note not found");
     }
 
-    return sendResponse(res, 200, "Note updated successfully", note);
+    return sendResponse(
+      res,
+      200,
+      "Note retrieved successfully",
+      note
+    );
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to update note");
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
-export const deleteNoteController = async (req: Request, res: Response) => {
+export const updateNoteController = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const userId = req.userId;
-    const id = Number(req.params.id);
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const note = await deleteNote(id, userId);
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendResponse(res, 400, "Invalid note ID");
+    }
+
+    const validation = updateNoteSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(
+        res,
+        400,
+        validation.error.issues[0].message
+      );
+    }
+
+    const { title, content, noteDate } = validation.data;
+    const safeTitle = title ?? null;
+    const safeContent = content ?? "";
+    const safeNoteDate = noteDate ?? null;
+
+    const note = await updateNoteService(
+      id,
+      req.userId,
+      safeTitle,
+      safeContent,
+      safeNoteDate
+    );
 
     if (!note) {
       return sendResponse(res, 404, "Note not found");
     }
 
-    return sendResponse(res, 200, "Note deleted successfully", note);
+    return sendResponse(
+      res,
+      200,
+      "Note updated successfully",
+      note
+    );
   } catch (error: any) {
     console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
 
-    return sendResponse(res, 500, "Failed to delete note");
+export const deleteNoteController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    if (!req.userId) {
+      return sendResponse(res, 401, "Authentication required");
+    }
+
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendResponse(res, 400, "Invalid note ID");
+    }
+
+    const note = await deleteNoteService(
+      id,
+      req.userId
+    );
+
+    if (!note) {
+      return sendResponse(res, 404, "Note not found");
+    }
+
+    return sendResponse(
+      res,
+      200,
+      "Note deleted successfully",
+      note
+    );
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
   }
 };

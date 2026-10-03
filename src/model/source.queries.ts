@@ -29,20 +29,19 @@ export const getSourceByIdQuery = `
 export const updateSourceQuery = `
   UPDATE sources
   SET
-    title = $1,
-    author = $2,
-    publication = $3,
-    source_type = $4,
-    publication_date = $5,
-    url = $6,
-    citation = $7,
-    rights_statement = $8,
-    perspective_note = $9,
+    title = COALESCE($1, title),
+    author = COALESCE($2, author),
+    publication = COALESCE($3, publication),
+    source_type = COALESCE($4, source_type),
+    publication_date = COALESCE($5, publication_date),
+    url = COALESCE($6, url),
+    citation = COALESCE($7, citation),
+    rights_statement = COALESCE($8, rights_statement),
+    perspective_note = COALESCE($9, perspective_note),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $10
   RETURNING *;
 `;
-
 export const deleteSourceQuery = `
   DELETE FROM sources
   WHERE id = $1

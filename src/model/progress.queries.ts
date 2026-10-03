@@ -44,8 +44,8 @@ export const getProgressByExhibitionQuery = `
 export const updateProgressQuery = `
   UPDATE progress
   SET
-    section_id = $1,
-    completed = $2,
+    section_id = COALESCE($1, section_id),
+    completed = COALESCE($2, completed),
     last_viewed_at = CURRENT_TIMESTAMP
   WHERE user_id = $3
     AND exhibition_id = $4

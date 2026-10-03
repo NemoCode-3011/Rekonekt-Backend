@@ -1,18 +1,28 @@
 import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import {
-  createSourceLink,
+  createSourceLinkService,
   getSourceLinks,
   getSourceLinkById,
-  updateSourceLink,
+  updateSourceLinkService,
   deleteSourceLink,
 } from "src/service/sourceLink.service";
+import {
+  createSourceLinkSchema,
+  updateSourceLinkSchema,
+} from "src/validation/source-link.schema";
 
 export const createSourceLinkController = async (
   req: Request,
   res: Response,
 ) => {
   try {
+    const validation = createSourceLinkSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
     const {
       sourceId,
       sectionId,
@@ -21,24 +31,16 @@ export const createSourceLinkController = async (
       artifactId,
       relationship,
       displayOrder,
-    } = req.body;
+    } = validation.data;
 
-    if (!sourceId) {
-      return sendResponse(res, 400, "Source ID is required");
-    }
-
-    if (!sectionId && !eventId && !personId && !artifactId) {
-      return sendResponse(res, 400, "At least one content ID is required");
-    }
-
-    const sourceLink = await createSourceLink(
-      Number(sourceId),
-      sectionId ? Number(sectionId) : null,
-      eventId ? Number(eventId) : null,
-      personId ? Number(personId) : null,
-      artifactId ? Number(artifactId) : null,
-      relationship || null,
-      displayOrder ? Number(displayOrder) : 0,
+    const sourceLink = await createSourceLinkService(
+      sourceId,
+      sectionId ?? null,
+      eventId ?? null,
+      personId ?? null,
+      artifactId ?? null,
+      relationship ?? null,
+      displayOrder ?? 0,
     );
 
     return sendResponse(
@@ -50,7 +52,11 @@ export const createSourceLinkController = async (
   } catch (error: any) {
     console.log(error.message || error);
 
-    return sendResponse(res, 500, "Failed to create source link");
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Referenced resource not found");
+    }
+
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
@@ -102,36 +108,16 @@ export const updateSourceLinkController = async (
   res: Response,
 ) => {
   try {
-    const id = Number(req.params.id);
+    const validation = updateSourceLinkSchema.safeParse(req.body);
 
-    const {
-      sourceId,
-      sectionId,
-      eventId,
-      personId,
-      artifactId,
-      relationship,
-      displayOrder,
-    } = req.body;
-
-    if (!sourceId) {
-      return sendResponse(res, 400, "Source ID is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const sourceLink = await updateSourceLink(
-      id,
-      Number(sourceId),
-      sectionId ? Number(sectionId) : null,
-      eventId ? Number(eventId) : null,
-      personId ? Number(personId) : null,
-      artifactId ? Number(artifactId) : null,
-      relationship || null,
-      displayOrder ? Number(displayOrder) : 0,
+    const sourceLink = await updateSourceLinkService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateSourceLinkService>[1],
     );
-
-    if (!sourceLink) {
-      return sendResponse(res, 404, "Source link not found");
-    }
 
     return sendResponse(
       res,
@@ -142,7 +128,11 @@ export const updateSourceLinkController = async (
   } catch (error: any) {
     console.log(error.message || error);
 
-    return sendResponse(res, 500, "Failed to update source link");
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Referenced resource not found");
+    }
+
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 

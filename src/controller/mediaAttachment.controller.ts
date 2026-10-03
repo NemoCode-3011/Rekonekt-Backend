@@ -1,15 +1,28 @@
 import { Request, Response } from "express";
 import {
-  createMediaAttachment,
+  createMediaAttachmentService,
   getMediaAttachments,
   getMediaAttachmentById,
   updateMediaAttachment,
   deleteMediaAttachment,
 } from "../service/mediaAttachment.service";
 import { sendResponse } from "../utils/response";
+import {
+  updateMediaAttachmentSchema,
+  createMediaAttachmentSchema,
+} from "src/validation/media-attachment.schema";
 
-export const createMediaAttachmentController = async (req: Request,res: Response) => {
+export const createMediaAttachmentController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
+    const validation = createMediaAttachmentSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
     const {
       mediaId,
       exhibitionId,
@@ -19,21 +32,17 @@ export const createMediaAttachmentController = async (req: Request,res: Response
       placeId,
       artifactId,
       displayOrder,
-    } = req.body;
+    } = validation.data;
 
-    if (!mediaId) {
-      return sendResponse(res, 400, "Media ID is required");
-    }
-
-    const attachment = await createMediaAttachment(
+    const attachment = await createMediaAttachmentService(
       mediaId,
-      exhibitionId || null,
-      sectionId || null,
-      eventId || null,
-      personId || null,
-      placeId || null,
-      artifactId || null,
-      displayOrder || 0,
+      exhibitionId ?? null,
+      sectionId ?? null,
+      eventId ?? null,
+      personId ?? null,
+      placeId ?? null,
+      artifactId ?? null,
+      displayOrder ?? 0,
     );
 
     return sendResponse(
@@ -44,6 +53,11 @@ export const createMediaAttachmentController = async (req: Request,res: Response
     );
   } catch (error: any) {
     console.log(error.message || error);
+
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Referenced resource not found");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -101,42 +115,16 @@ export const updateMediaAttachmentController = async (
   res: Response,
 ) => {
   try {
-    const id = Number(req.params.id);
+    const validation = updateMediaAttachmentSchema.safeParse(req.body);
 
-    if (isNaN(id)) {
-      return sendResponse(res, 400, "Invalid media attachment ID");
-    }
-
-    const {
-      mediaId,
-      exhibitionId,
-      sectionId,
-      eventId,
-      personId,
-      placeId,
-      artifactId,
-      displayOrder,
-    } = req.body;
-
-    if (!mediaId) {
-      return sendResponse(res, 400, "Media ID is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
     const attachment = await updateMediaAttachment(
-      id,
-      mediaId,
-      exhibitionId || null,
-      sectionId || null,
-      eventId || null,
-      personId || null,
-      placeId || null,
-      artifactId || null,
-      displayOrder || 0,
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateMediaAttachment>[1],
     );
-
-    if (!attachment) {
-      return sendResponse(res, 404, "Media attachment not found");
-    }
 
     return sendResponse(
       res,
@@ -146,6 +134,11 @@ export const updateMediaAttachmentController = async (
     );
   } catch (error: any) {
     console.log(error.message || error);
+
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Referenced resource not found");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

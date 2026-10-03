@@ -12,22 +12,23 @@ import {
 import { sendResponse } from "../utils/response";
 import { signInService } from "src/service/auth.service";
 import { deleteExhibitionService } from "src/service/exhibitions.service";
+import {
+  resendOtpSchema,
+  resetPasswordSchema,
+  signupSchema,
+  verifyOtpSchema,
+} from "src/validation/auth.schema";
+import { signInSchema } from "src/validation/auth.schema";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, preferredLanguage } = req.body ?? {};
+    const validation = signupSchema.safeParse(req.body);
 
-    if (!name || typeof name !== "string") {
-      return sendResponse(res, 400, "Name is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return sendResponse(res, 400, "Valid email is required");
-    }
-
-    if (!password || typeof password !== "string" || password.length < 8) {
-      return sendResponse(res, 400, "Password must be at least 8 characters");
-    }
+    const { name, email, password, preferredLanguage } = validation.data;
 
     const user = await signUpService({
       name,
@@ -36,30 +37,26 @@ export const signUpController = async (req: Request, res: Response) => {
       preferredLanguage,
     });
 
-    return sendResponse(res, 201, "Registration successful", user);
+    return sendResponse(res, 201, "User created successfully", user);
   } catch (error: any) {
+    console.log(error.message || error);
     if (error.message === "Email already exists") {
-      return sendResponse(res, 409, error.message);
+      return sendResponse(res, 409, "Email already exists");
     }
-
-    console.error("Signup error:", error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
 
 export const verifyOtpController = async (req: Request, res: Response) => {
-  const { email, otp } = req.body;
   try {
-    if (!email || !email.includes("@")) {
-      return sendResponse(res, 400, "Valid email required");
-    }
-    if (!otp || otp.length !== 6) {
-      return sendResponse(res, 400, "Valid OTP required");
+    const validation = verifyOtpSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
+    const { email, otp } = validation.data;
     const results = await verifyOtpService({ email, otp });
-
-    // success response
 
     return sendResponse(res, 200, "OTP verified successfully", results);
   } catch (error: any) {
@@ -72,17 +69,14 @@ export const verifyOtpController = async (req: Request, res: Response) => {
 };
 
 export const signInController = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
   try {
-    if (!email || !email.includes("@")) {
-      return sendResponse(res, 400, "Valid email required");
+    const validation = signInSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!password) {
-      return sendResponse(res, 400, "Password is required");
-    }
-
+    const { email, password } = validation.data;
     const results = await signInService({
       email,
       password,
@@ -200,37 +194,15 @@ export const createAdminController = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteExhibitionController = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const id = Number(req.params.id);
-
-    if (Number.isNaN(id)) {
-      return sendResponse(res, 400, "Invalid exhibition ID");
-    }
-
-    const result = await deleteExhibitionService(id);
-
-    return sendResponse(res, 200, "Exhibition deleted successfully", result);
-  } catch (error: any) {
-    if (error.message === "Exhibition not found") {
-      return sendResponse(res, 404, error.message);
-    }
-
-    console.log(error.message || error);
-
-    return sendResponse(res, 500, "Internal server error");
-  }
-};
 export const resendOtpController = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const validation = resendOtpSchema.safeParse(req.body);
 
-    if (!email) {
-      return sendResponse(res, 400, "Email is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
+
+    const { email } = validation.data;
 
     const result = await resendOtpService(email);
 
@@ -241,14 +213,16 @@ export const resendOtpController = async (req: Request, res: Response) => {
     return sendResponse(res, 400, error.message || "Failed to resend OTP");
   }
 };
+
 export const forgotPasswordController = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const validation = resendOtpSchema.safeParse(req.body);
 
-    if (!email) {
-      return sendResponse(res, 400, "Email is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
+    const { email } = validation.data;
     await forgotPasswordService(email);
 
     return sendResponse(res, 200, "Password reset OTP sent successfully");
@@ -256,17 +230,20 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     return sendResponse(res, 400, error.message || "Failed to send reset OTP");
   }
 };
+
 export const resetPasswordController = async (req: Request, res: Response) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const validation = resetPasswordSchema.safeParse(req.body);
 
-    if (!email || !otp || !newPassword) {
-      return sendResponse(res, 400, "Email, OTP and new password are required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const user = await resetPasswordService(email, otp, newPassword);
+    const { email, otp, newPassword } = validation.data;
 
-    return sendResponse(res, 200, "Password reset successfully", user);
+    const result = await resetPasswordService(email, otp, newPassword);
+
+    return sendResponse(res, 200, "Password reset successfully", result);
   } catch (error: any) {
     return sendResponse(res, 400, error.message || "Failed to reset password");
   }

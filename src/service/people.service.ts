@@ -62,12 +62,12 @@ export const updatePersonService = async (
 ) => {
   try {
     const result = await pool.query(updatePersonQuery, [
-      data.name,
-      data.slug,
-      data.description ?? null,
-      data.birthDate ?? null,
-      data.deathDate ?? null,
-      id,
+        data.name,
+        data.slug,
+        data.description,
+        data.birthDate,
+        data.deathDate,
+        id,
     ]);
 
     if (result.rows.length === 0) {

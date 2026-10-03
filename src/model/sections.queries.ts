@@ -27,11 +27,11 @@ export const getSectionByIdQuery = `
 export const updateSectionQuery = `
   UPDATE sections
   SET
-    title = $1,
-    slug = $2,
-    introduction = $3,
-    section_order = $4,
-    hero_image_url = $5,
+    title = COALESCE($1, title),
+    slug = COALESCE($2, slug),
+    introduction = COALESCE($3, introduction),
+    section_order = COALESCE($4, section_order),
+    hero_image_url = COALESCE($5, hero_image_url),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $6
   RETURNING *;

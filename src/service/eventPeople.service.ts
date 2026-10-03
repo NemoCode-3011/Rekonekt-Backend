@@ -5,7 +5,7 @@ import {
   removeEventPersonQuery,
 } from "src/model/eventPeople.queries";
 
-export const addEventPerson = async (eventId: number, personId: number) => {
+export const addEventPersonService = async (eventId: number, personId: number) => {
   const result = await pool.query(addEventPersonQuery, [eventId, personId]);
 
   return result.rows[0];

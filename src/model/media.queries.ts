@@ -27,13 +27,13 @@ export const getMediaByIdQuery = `
 export const updateMediaQuery = `
   UPDATE media
   SET
-    title = $1,
-    media_type = $2,
-    file_url = $3,
-    caption = $4,
-    description = $5,
-    source_credit = $6,
-    license = $7,
+    title = COALESCE($1, title),
+    media_type = COALESCE($2, media_type),
+    file_url = COALESCE($3, file_url),
+    caption = COALESCE($4, caption),
+    description = COALESCE($5, description),
+    source_credit = COALESCE($6, source_credit),
+    license = COALESCE($7, license),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $8
   RETURNING *;

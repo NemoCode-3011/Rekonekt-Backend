@@ -25,11 +25,11 @@ export const getPersonByIdQuery = `
 export const updatePersonQuery = `
   UPDATE people
   SET
-    name = $1,
-    slug = $2,
-    description = $3,
-    birth_date = $4,
-    death_date = $5,
+    name = COALESCE($1, name),
+    slug = COALESCE($2, slug),
+    description = COALESCE($3, description),
+    birth_date = COALESCE($4, birth_date),
+    death_date = COALESCE($5, death_date),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $6
   RETURNING *;

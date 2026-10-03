@@ -7,23 +7,23 @@ import {
   deleteMediaQuery,
 } from "src/model/media.queries";
 
-export const createMedia = async (
-  title: string,
-  mediaType: string,
-  fileUrl: string,
-  caption: string | null,
-  description: string | null,
-  sourceCredit: string | null,
-  license: string | null,
-) => {
+export const createMediaService = async (data: {
+  title: string;
+  mediaType: string;
+  fileUrl: string;
+  caption?: string;
+  description?: string;
+  sourceCredit?: string;
+  license?: string;
+}) => {
   const result = await pool.query(createMediaQuery, [
-    title,
-    mediaType,
-    fileUrl,
-    caption,
-    description,
-    sourceCredit,
-    license,
+    data.title,
+    data.mediaType,
+    data.fileUrl,
+    data.caption,
+    data.description,
+    data.sourceCredit,
+    data.license,
   ]);
 
   return result.rows[0];
@@ -41,24 +41,26 @@ export const getMediaById = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateMedia = async (
+export const updateMediaService = async (
   id: number,
-  title: string,
-  mediaType: string,
-  fileUrl: string,
-  caption: string | null,
-  description: string | null,
-  sourceCredit: string | null,
-  license: string | null,
+  data: {
+    title?: string;
+    mediaType?: string;
+    fileUrl?: string;
+    caption?: string;
+    description?: string;
+    sourceCredit?: string;
+    license?: string;
+  },
 ) => {
   const result = await pool.query(updateMediaQuery, [
-    title,
-    mediaType,
-    fileUrl,
-    caption,
-    description,
-    sourceCredit,
-    license,
+    data.title,
+    data.mediaType,
+    data.fileUrl,
+    data.caption,
+    data.description,
+    data.sourceCredit,
+    data.license,
     id,
   ]);
 

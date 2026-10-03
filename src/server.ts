@@ -23,6 +23,9 @@ import bookmarkRoutes from "src/routes/bookmarks.routes";
 import noteRoutes from "src/routes/note.routes";
 import progressRoutes from "src/routes/progress.routes";
 import googleAuthRoutes from "src/routes/googleAuth.routes";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "../src/docs/swagger";
+
 
 dotenv.config();
 
@@ -38,6 +41,8 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 app.use(cookieParser());
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);

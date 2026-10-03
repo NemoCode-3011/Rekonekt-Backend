@@ -7,7 +7,7 @@ import {
   deleteSourceQuery,
 } from "src/model/source.queries";
 
-export const createSource = async (
+export const createSourceService = async (
   title: string,
   author: string | null,
   publication: string | null,
@@ -45,28 +45,30 @@ export const getSourceById = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateSource = async (
+export const updateSourceService = async (
   id: number,
-  title: string,
-  author: string | null,
-  publication: string | null,
-  sourceType: string | null,
-  publicationDate: string | null,
-  url: string | null,
-  citation: string | null,
-  rightsStatement: string | null,
-  perspectiveNote: string | null,
+  data: {
+    title: string;
+    author: string | null;
+    publication: string | null;
+    sourceType: string | null;
+    publicationDate: string | null;
+    url: string | null;
+    citation: string | null;
+    rightsStatement: string | null;
+    perspectiveNote: string | null;
+  },
 ) => {
   const result = await pool.query(updateSourceQuery, [
-    title,
-    author,
-    publication,
-    sourceType,
-    publicationDate,
-    url,
-    citation,
-    rightsStatement,
-    perspectiveNote,
+    data.title,
+    data.author,
+    data.publication,
+    data.sourceType,
+    data.publicationDate,
+    data.url,
+    data.citation,
+    data.rightsStatement,
+    data.perspectiveNote,
     id,
   ]);
 

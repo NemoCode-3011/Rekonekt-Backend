@@ -28,14 +28,14 @@ export const getMediaAttachmentByIdQuery = `
 export const updateMediaAttachmentQuery = `
   UPDATE media_attachments
   SET
-    media_id = $1,
-    exhibition_id = $2,
-    section_id = $3,
-    event_id = $4,
-    person_id = $5,
-    place_id = $6,
-    artifact_id = $7,
-    display_order = $8
+    media_id = COALESCE($1, media_id),
+    exhibition_id = COALESCE($2, exhibition_id),
+    section_id = COALESCE($3, section_id),
+    event_id = COALESCE($4, event_id),
+    person_id = COALESCE($5, person_id),
+    place_id = COALESCE($6, place_id),
+    artifact_id = COALESCE($7, artifact_id),
+    display_order = COALESCE($8, display_order)
   WHERE id = $9
   RETURNING *;
 `;

@@ -1,30 +1,39 @@
 import { Request, Response } from "express";
 import {
-  addEventPerson,
+  addEventPersonService,
   getPeopleByEvent,
   removeEventPerson,
 } from "../service/eventPeople.service";
 import { sendResponse } from "../utils/response";
+import { addEventPersonSchema } from "src/validation/event-person.schema";
 
 export const addEventPersonController = async (req: Request, res: Response) => {
   try {
-    const eventId = Number(req.params.eventId);
-    const { personId } = req.body;
+    const validation = addEventPersonSchema.safeParse({
+      eventId: Number(req.params.eventId),
+      personId: Number(req.body.personId),
+    });
 
-    if (!personId) {
-      return sendResponse(res, 400, "Person ID is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const result = await addEventPerson(eventId, personId);
+    const { eventId, personId } = validation.data;
 
-    return sendResponse(
-      res,
-      201,
-      "Person linked to event successfully",
-      result,
-    );
+    const result = await addEventPersonService(eventId, personId);
+
+    return sendResponse(res, 201, "Person added to event successfully", result);
   } catch (error: any) {
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Person is already linked to this event");
+    }
+
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Event or person not found");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -50,10 +59,21 @@ export const getPeopleByEventController = async (
   }
 };
 
-export const removeEventPersonController = async (req: Request,res: Response,) => {
+export const removeEventPersonController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const eventId = Number(req.params.eventId);
     const personId = Number(req.params.personId);
+
+    if (!Number.isInteger(eventId) || eventId <= 0) {
+      return sendResponse(res, 400, "Invalid event ID");
+    }
+
+    if (!Number.isInteger(personId) || personId <= 0) {
+      return sendResponse(res, 400, "Invalid person ID");
+    }
 
     const result = await removeEventPerson(eventId, personId);
 
@@ -69,6 +89,7 @@ export const removeEventPersonController = async (req: Request,res: Response,) =
     );
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

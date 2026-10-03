@@ -7,7 +7,7 @@ import {
   deleteSourceLinkQuery,
 } from "src/model/sourceLink.queries";
 
-export const createSourceLink = async (
+export const createSourceLinkService = async (
   sourceId: number,
   sectionId: number | null,
   eventId: number | null,
@@ -41,24 +41,26 @@ export const getSourceLinkById = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateSourceLink = async (
+export const updateSourceLinkService = async (
   id: number,
-  sourceId: number,
-  sectionId: number | null,
-  eventId: number | null,
-  personId: number | null,
-  artifactId: number | null,
-  relationship: string | null,
-  displayOrder: number,
+  data: {
+    sourceId: number;
+    sectionId: number | null;
+    eventId: number | null;
+    personId: number | null;
+    artifactId: number | null;
+    relationship: string | null;
+    displayOrder: number;
+  },
 ) => {
   const result = await pool.query(updateSourceLinkQuery, [
-    sourceId,
-    sectionId,
-    eventId,
-    personId,
-    artifactId,
-    relationship,
-    displayOrder,
+    data.sourceId,
+    data.sectionId,
+    data.eventId,
+    data.personId,
+    data.artifactId,
+    data.relationship,
+    data.displayOrder,
     id,
   ]);
 

@@ -1,14 +1,17 @@
 import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import { authenticateWithGoogle } from "src/service/googleAuth.service";
+import { googleAuthSchema } from "src/validation/auth.schema";
 
 export const googleAuthController = async (req: Request, res: Response) => {
   try {
-    const { credential } = req.body;
+    const validation = googleAuthSchema.safeParse(req.body);
 
-    if (!credential) {
-      return sendResponse(res, 400, "Google credential is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
+
+    const { credential } = validation.data;
 
     const result = await authenticateWithGoogle(credential);
 

@@ -7,7 +7,7 @@ import {
   deleteProgressQuery,
 } from "src/model/progress.queries";
 
-export const createProgress = async (
+export const createProgressService = async (
   userId: number,
   exhibitionId: number,
   sectionId: number | null,
@@ -23,13 +23,13 @@ export const createProgress = async (
   return result.rows[0];
 };
 
-export const getProgressByUser = async (userId: number) => {
+export const getProgressByUserService = async (userId: number) => {
   const result = await pool.query(getProgressByUserQuery, [userId]);
 
   return result.rows;
 };
 
-export const getProgressByExhibition = async (
+export const getProgressByExhibitionService = async (
   userId: number,
   exhibitionId: number,
 ) => {
@@ -41,7 +41,7 @@ export const getProgressByExhibition = async (
   return result.rows[0];
 };
 
-export const updateProgress = async (
+export const updateProgressService = async (
   userId: number,
   exhibitionId: number,
   sectionId: number | null,
@@ -57,7 +57,7 @@ export const updateProgress = async (
   return result.rows[0];
 };
 
-export const deleteProgress = async (userId: number, exhibitionId: number) => {
+export const deleteProgressService = async (userId: number, exhibitionId: number) => {
   const result = await pool.query(deleteProgressQuery, [userId, exhibitionId]);
 
   return result.rows[0];

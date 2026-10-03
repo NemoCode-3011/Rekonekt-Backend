@@ -7,7 +7,7 @@ import {
   deleteNoteQuery,
 } from "src/model/note.queries";
 
-export const createNote = async (
+export const createNoteService = async (
   userId: number,
   title: string | null,
   content: string,
@@ -23,19 +23,19 @@ export const createNote = async (
   return result.rows[0];
 };
 
-export const getNotesByUser = async (userId: number) => {
+export const getNotesByUserService = async (userId: number) => {
   const result = await pool.query(getNotesByUserQuery, [userId]);
 
   return result.rows;
 };
 
-export const getNoteById = async (id: number, userId: number) => {
+export const getNoteByIdService = async (id: number, userId: number) => {
   const result = await pool.query(getNoteByIdQuery, [id, userId]);
 
   return result.rows[0];
 };
 
-export const updateNote = async (
+export const updateNoteService = async (
   id: number,
   userId: number,
   title: string | null,
@@ -53,7 +53,7 @@ export const updateNote = async (
   return result.rows[0];
 };
 
-export const deleteNote = async (id: number, userId: number) => {
+export const deleteNoteService = async (id: number, userId: number) => {
   const result = await pool.query(deleteNoteQuery, [id, userId]);
 
   return result.rows[0];

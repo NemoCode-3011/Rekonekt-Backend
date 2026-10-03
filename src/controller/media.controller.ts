@@ -1,16 +1,26 @@
 import { Request, Response } from "express";
 import {
-  createMedia,
+  createMediaService,
   getMedia,
   getMediaById,
-  updateMedia,
+  updateMediaService,
   deleteMedia,
 } from "src/service/media.service";
 import { sendResponse } from "../utils/response";
 import { uploadToR2 } from "src/service/r2.service";
+import {
+  createMediaSchema,
+  updateMediaSchema,
+} from "src/validation/media.schema";
 
 export const createMediaController = async (req: Request, res: Response) => {
   try {
+    const validation = createMediaSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
     const {
       title,
       mediaType,
@@ -19,29 +29,22 @@ export const createMediaController = async (req: Request, res: Response) => {
       description,
       sourceCredit,
       license,
-    } = req.body;
+    } = validation.data;
 
-    if (!title || !mediaType || !fileUrl) {
-      return sendResponse(
-        res,
-        400,
-        "Title, media type and file URL are required",
-      );
-    }
-
-    const media = await createMedia(
+    const media = await createMediaService({
       title,
       mediaType,
       fileUrl,
-      caption || null,
-      description || null,
-      sourceCredit || null,
-      license || null,
-    );
+      caption: caption ?? undefined,
+      description: description ?? undefined,
+      sourceCredit: sourceCredit ?? undefined,
+      license: license ?? undefined,
+    });
 
     return sendResponse(res, 201, "Media created successfully", media);
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -80,48 +83,21 @@ export const getMediaByIdController = async (req: Request, res: Response) => {
 
 export const updateMediaController = async (req: Request, res: Response) => {
   try {
-    const id = Number(req.params.id);
+    const validation = updateMediaSchema.safeParse(req.body);
 
-    if (isNaN(id)) {
-      return sendResponse(res, 400, "Invalid media ID");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const {
-      title,
-      mediaType,
-      fileUrl,
-      caption,
-      description,
-      sourceCredit,
-      license,
-    } = req.body;
-
-    if (!title || !mediaType || !fileUrl) {
-      return sendResponse(
-        res,
-        400,
-        "Title, media type and file URL are required",
-      );
-    }
-
-    const media = await updateMedia(
-      id,
-      title,
-      mediaType,
-      fileUrl,
-      caption || null,
-      description || null,
-      sourceCredit || null,
-      license || null,
+    const media = await updateMediaService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateMediaService>[1],
     );
-
-    if (!media) {
-      return sendResponse(res, 404, "Media not found");
-    }
 
     return sendResponse(res, 200, "Media updated successfully", media);
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -162,15 +138,15 @@ export const uploadMediaController = async (req: Request, res: Response) => {
 
     const fileUrl = await uploadToR2(req.file);
 
-    const media = await createMedia(
+    const media = await createMediaService({
       title,
       mediaType,
       fileUrl,
-      caption || null,
-      description || null,
-      sourceCredit || null,
-      license || null,
-    );
+      caption: caption || null,
+      description: description || null,
+      sourceCredit: sourceCredit || null,
+      license: license || null,
+    });
 
     return sendResponse(res, 201, "Media uploaded successfully", media);
   } catch (error: any) {

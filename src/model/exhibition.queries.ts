@@ -61,16 +61,17 @@ export const deleteExhibitionQuery = `
   RETURNING id, title, slug;
 `;
 
+
 export const updateExhibitionQuery = `
   UPDATE exhibitions
   SET
-    title = $1,
-    slug = $2,
-    subtitle = $3,
-    description = $4,
-    start_date = $5,
-    end_date = $6,
-    cover_image_url = $7,
+    title = COALESCE($1, title),
+    slug = COALESCE($2, slug),
+    subtitle = COALESCE($3, subtitle),
+    description = COALESCE($4, description),
+    start_date = COALESCE($5, start_date),
+    end_date = COALESCE($6, end_date),
+    cover_image_url = COALESCE($7, cover_image_url),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $8
   RETURNING *;

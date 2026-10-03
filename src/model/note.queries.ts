@@ -26,9 +26,9 @@ export const getNoteByIdQuery = `
 export const updateNoteQuery = `
   UPDATE notes
   SET
-    title = $1,
-    content = $2,
-    note_date = $3,
+    title = COALESCE($1, title),
+    content = COALESCE($2, content),
+    note_date = COALESCE($3, note_date),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $4
     AND user_id = $5

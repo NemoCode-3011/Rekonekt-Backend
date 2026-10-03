@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import {
-  createArtifact,
+  createArtifactService,
   getArtifacts,
   getArtifactsBySection,
   getArtifactById,
@@ -8,10 +8,31 @@ import {
   deleteArtifact,
 } from "../service/artifacts.service";
 import { sendResponse } from "../utils/response";
+import {
+  createArtifactSchema,
+  updateArtifactSchema,
+} from "../validation/artifact.schema";
 
 export const createArtifactController = async (req: Request, res: Response) => {
   try {
+    const validation = createArtifactSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
     const {
+      sectionId,
+      title,
+      slug,
+      artifactType,
+      description = null,
+      historicalContext = null,
+      dateDisplay = null,
+      placeId = null,
+    } = validation.data;
+
+    const artifact = await createArtifactService({
       sectionId,
       title,
       slug,
@@ -20,30 +41,23 @@ export const createArtifactController = async (req: Request, res: Response) => {
       historicalContext,
       dateDisplay,
       placeId,
-    } = req.body;
-
-    if (!sectionId || !title || !slug) {
-      return sendResponse(res, 400, "Section ID, title and slug are required");
-    }
-
-    const artifact = await createArtifact(
-      sectionId,
-      title,
-      slug,
-      artifactType || null,
-      description || null,
-      historicalContext || null,
-      dateDisplay || null,
-      placeId || null,
-    );
+    });
 
     return sendResponse(res, 201, "Artifact created successfully", artifact);
   } catch (error: any) {
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Artifact slug already exists");
+    }
+
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Section or place not found");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
-
 export const getArtifactsController = async (req: Request, res: Response) => {
   try {
     const artifacts = await getArtifacts();
@@ -111,50 +125,32 @@ export const getArtifactByIdController = async (
 
 export const updateArtifactController = async (req: Request, res: Response) => {
   try {
-    const id = Number(req.params.id);
+    const validation = updateArtifactSchema.safeParse(req.body);
 
-    if (isNaN(id)) {
-      return sendResponse(res, 400, "Invalid artifact ID");
-    }
-
-    const {
-      sectionId,
-      title,
-      slug,
-      artifactType,
-      description,
-      historicalContext,
-      dateDisplay,
-      placeId,
-    } = req.body;
-
-    if (!sectionId || !title || !slug) {
-      return sendResponse(res, 400, "Section ID, title and slug are required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
     const artifact = await updateArtifact(
-      id,
-      sectionId,
-      title,
-      slug,
-      artifactType || null,
-      description || null,
-      historicalContext || null,
-      dateDisplay || null,
-      placeId || null,
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateArtifact>[1],
     );
-
-    if (!artifact) {
-      return sendResponse(res, 404, "Artifact not found");
-    }
 
     return sendResponse(res, 200, "Artifact updated successfully", artifact);
   } catch (error: any) {
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Artifact slug already exists");
+    }
+
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Section or place not found");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
-
 export const deleteArtifactController = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);

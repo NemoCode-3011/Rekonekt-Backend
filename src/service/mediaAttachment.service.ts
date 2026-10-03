@@ -7,7 +7,7 @@ import {
   deleteMediaAttachmentQuery,
 } from "../model/mediaAttachments.queries";
 
-export const createMediaAttachment = async (
+export const createMediaAttachmentService = async (
   mediaId: number,
   exhibitionId: number | null,
   sectionId: number | null,
@@ -45,24 +45,26 @@ export const getMediaAttachmentById = async (id: number) => {
 
 export const updateMediaAttachment = async (
   id: number,
-  mediaId: number,
-  exhibitionId: number | null,
-  sectionId: number | null,
-  eventId: number | null,
-  personId: number | null,
-  placeId: number | null,
-  artifactId: number | null,
-  displayOrder: number,
+  data: {
+    mediaId: number;
+    exhibitionId: number | null;
+    sectionId: number | null;
+    eventId: number | null;
+    personId: number | null;
+    placeId: number | null;
+    artifactId: number | null;
+    displayOrder: number;
+  },
 ) => {
   const result = await pool.query(updateMediaAttachmentQuery, [
-    mediaId,
-    exhibitionId,
-    sectionId,
-    eventId,
-    personId,
-    placeId,
-    artifactId,
-    displayOrder,
+    data.mediaId,
+    data.exhibitionId,
+    data.sectionId,
+    data.eventId,
+    data.personId,
+    data.placeId,
+    data.artifactId,
+    data.displayOrder,
     id,
   ]);
 

@@ -1,26 +1,27 @@
 import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import {
-  createBookmark,
-  getBookmarksByUser,
-  getBookmarkById,
-  deleteBookmark,
+  createBookmarkService,
+  getBookmarksByUserService,
+  getBookmarkByIdService,
+  deleteBookmarkService,
 } from "../service/bookmarks.service";
-
+import { createBookmarkSchema } from "../validation/bookmark.schema";
 export const createBookmarkController = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId;
-    const { artifactId } = req.body;
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    if (!artifactId) {
-      return sendResponse(res, 400, "Artifact ID is required");
+    const validation = createBookmarkSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const bookmark = await createBookmark(userId, Number(artifactId));
+    const { artifactId } = validation.data;
+
+    const bookmark = await createBookmarkService(req.userId, artifactId);
 
     return sendResponse(res, 201, "Bookmark created successfully", bookmark);
   } catch (error: any) {
@@ -30,19 +31,21 @@ export const createBookmarkController = async (req: Request, res: Response) => {
       return sendResponse(res, 409, "Artifact already bookmarked");
     }
 
-    return sendResponse(res, 500, "Failed to create bookmark");
+    if (error.code === "23503") {
+      return sendResponse(res, 404, "Artifact not found");
+    }
+
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
 export const getBookmarksController = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId;
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const bookmarks = await getBookmarksByUser(userId);
+    const bookmarks = await getBookmarksByUserService(req.userId);
 
     return sendResponse(
       res,
@@ -52,8 +55,7 @@ export const getBookmarksController = async (req: Request, res: Response) => {
     );
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to retrieve bookmarks");
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
@@ -62,14 +64,17 @@ export const getBookmarkByIdController = async (
   res: Response,
 ) => {
   try {
-    const userId = req.userId;
-    const id = Number(req.params.id);
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const bookmark = await getBookmarkById(id, userId);
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendResponse(res, 400, "Invalid bookmark ID");
+    }
+
+    const bookmark = await getBookmarkByIdService(id, req.userId);
 
     if (!bookmark) {
       return sendResponse(res, 404, "Bookmark not found");
@@ -78,21 +83,23 @@ export const getBookmarkByIdController = async (
     return sendResponse(res, 200, "Bookmark retrieved successfully", bookmark);
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to retrieve bookmark");
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
 export const deleteBookmarkController = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId;
-    const id = Number(req.params.id);
-
-    if (!userId) {
+    if (!req.userId) {
       return sendResponse(res, 401, "Authentication required");
     }
 
-    const bookmark = await deleteBookmark(id, userId);
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return sendResponse(res, 400, "Invalid bookmark ID");
+    }
+
+    const bookmark = await deleteBookmarkService(id, req.userId);
 
     if (!bookmark) {
       return sendResponse(res, 404, "Bookmark not found");
@@ -101,7 +108,6 @@ export const deleteBookmarkController = async (req: Request, res: Response) => {
     return sendResponse(res, 200, "Bookmark deleted successfully", bookmark);
   } catch (error: any) {
     console.log(error.message || error);
-
-    return sendResponse(res, 500, "Failed to delete bookmark");
+    return sendResponse(res, 500, "Internal server error");
   }
 };

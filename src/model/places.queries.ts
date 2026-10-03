@@ -24,15 +24,14 @@ export const getPlaceByIdQuery = `
 export const updatePlaceQuery = `
   UPDATE places
   SET
-    name = $1,
-    description = $2,
-    latitude = $3,
-    longitude = $4,
+    name = COALESCE($1, name),
+    description = COALESCE($2, description),
+    latitude = COALESCE($3, latitude),
+    longitude = COALESCE($4, longitude),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $5
   RETURNING *;
 `;
-
 export const deletePlaceQuery = `
   DELETE FROM places
   WHERE id = $1

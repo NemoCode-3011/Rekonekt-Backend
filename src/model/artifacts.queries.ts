@@ -35,14 +35,14 @@ export const getArtifactByIdQuery = `
 export const updateArtifactQuery = `
   UPDATE artifacts
   SET
-    section_id = $1,
-    title = $2,
-    slug = $3,
-    artifact_type = $4,
-    description = $5,
-    historical_context = $6,
-    date_display = $7,
-    place_id = $8,
+    section_id = COALESCE($1, section_id),
+    title = COALESCE($2, title),
+    slug = COALESCE($3, slug),
+    artifact_type = COALESCE($4, artifact_type),
+    description = COALESCE($5, description),
+    historical_context = COALESCE($6, historical_context),
+    date_display = COALESCE($7, date_display),
+    place_id = COALESCE($8, place_id),
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $9
   RETURNING *;

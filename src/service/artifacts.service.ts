@@ -8,28 +8,28 @@ import {
   deleteArtifactQuery,
 } from "../model/artifacts.queries";
 
-export const createArtifact = async (
-  sectionId: number,
-  title: string,
-  slug: string,
-  artifactType: string | null,
-  description: string | null,
+export const createArtifactService = async (artifactData: {
+  sectionId: number;
+  title: string;
+  slug: string;
+  artifactType: string | null;
+  description: string | null;
   historicalContext: string | null,
   dateDisplay: string | null,
   placeId: number | null,
-) => {
+}) => {
   const client = await pool.connect();
 
   try {
     const result = await client.query(createArtifactQuery, [
-      sectionId,
-      title,
-      slug,
-      artifactType,
-      description,
-      historicalContext,
-      dateDisplay,
-      placeId,
+      artifactData.sectionId,
+      artifactData.title,
+      artifactData.slug,
+      artifactData.artifactType,
+      artifactData.description,
+      artifactData.historicalContext,
+      artifactData.dateDisplay,
+      artifactData.placeId,
     ]);
 
     return result.rows[0];
@@ -58,28 +58,30 @@ export const getArtifactById = async (id: number) => {
 
 export const updateArtifact = async (
   id: number,
-  sectionId: number,
-  title: string,
-  slug: string,
-  artifactType: string | null,
-  description: string | null,
-  historicalContext: string | null,
-  dateDisplay: string | null,
-  placeId: number | null,
+  data: {
+    sectionId: number,
+    title: string,
+    slug: string,
+    artifactType: string | null,
+    description: string | null,
+    historicalContext: string | null,
+    dateDisplay: string | null,
+    placeId: number | null,
+  }
 ) => {
   const client = await pool.connect();
 
   try {
     const result = await client.query(updateArtifactQuery, [
-      sectionId,
-      title,
-      slug,
-      artifactType,
-      description,
-      historicalContext,
-      dateDisplay,
-      placeId,
-      id,
+     data.sectionId,
+  data.title,
+  data.slug,
+  data.artifactType,
+  data.description,
+  data.historicalContext,
+  data.dateDisplay,
+  data.placeId,
+  id,
     ]);
 
     return result.rows[0];

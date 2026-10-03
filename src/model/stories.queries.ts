@@ -28,14 +28,13 @@ export const getStoryByIdQuery = `
 export const updateStoryQuery = `
   UPDATE stories
   SET
-    section_id = $1,
-    title = $2,
-    slug = $3,
-    excerpt = $4,
-    content = $5,
-    cover_image_url = $6,
+    title = COALESCE($1, title),
+    slug = COALESCE($2, slug),
+    excerpt = COALESCE($3, excerpt),
+    content = COALESCE($4, content),
+    cover_image_url = COALESCE($5, cover_image_url),
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $7
+  WHERE id = $6
   RETURNING *;
 `;
 

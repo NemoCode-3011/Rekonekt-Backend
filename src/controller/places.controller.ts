@@ -1,35 +1,40 @@
 import { Request, Response } from "express";
 import {
-  createPlace,
+  createPlaceService,
   getPlaces,
   getPlaceById,
-  updatePlace,
+  updatePlaceService,
   deletePlace,
 } from "../service/places.service";
 import { sendResponse } from "../utils/response";
-
+import {
+  createPlaceSchema,
+  updatePlaceSchema,
+} from "../validation/place.schema";
 export const createPlaceController = async (req: Request, res: Response) => {
   try {
-    const { name, description, latitude, longitude } = req.body;
+    const validation = createPlaceSchema.safeParse(req.body);
 
-    if (!name) {
-      return sendResponse(res, 400, "Name is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const place = await createPlace(
+    const { name, description, latitude, longitude } = validation.data;
+
+    const place = await createPlaceService(
       name,
       description ?? null,
-      latitude ?? null,
-      longitude ?? null,
+      latitude,
+      longitude,
     );
 
     return sendResponse(res, 201, "Place created successfully", place);
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };
-
 export const getPlacesController = async (req: Request, res: Response) => {
   try {
     const places = await getPlaces();
@@ -60,28 +65,21 @@ export const getPlaceByIdController = async (req: Request, res: Response) => {
 
 export const updatePlaceController = async (req: Request, res: Response) => {
   try {
-    const id = Number(req.params.id);
-    const { name, description, latitude, longitude } = req.body;
+    const validation = updatePlaceSchema.safeParse(req.body);
 
-    if (!name) {
-      return sendResponse(res, 400, "Name is required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const place = await updatePlace(
-      id,
-      name,
-      description ?? null,
-      latitude ?? null,
-      longitude ?? null,
+    const place = await updatePlaceService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updatePlaceService>[1],
     );
-
-    if (!place) {
-      return sendResponse(res, 404, "Place not found");
-    }
 
     return sendResponse(res, 200, "Place updated successfully", place);
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

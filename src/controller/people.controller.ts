@@ -8,20 +8,22 @@ import {
   updatePersonService,
   deletePersonService,
 } from "../service/people.service";
+import {
+  createPersonSchema,
+  updatePersonSchema,
+} from "src/validation/people.schema";
 
 export const createPersonController = async (req: Request, res: Response) => {
-  const { name, slug, description, birthDate, deathDate } = req.body;
-
   try {
-    if (!name) {
-      return sendResponse(res, 400, "Name is required");
+    const validation = createPersonSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!slug) {
-      return sendResponse(res, 400, "Slug is required");
-    }
+    const { name, slug, description, birthDate, deathDate } = validation.data;
 
-    const result = await createPersonService({
+    const person = await createPersonService({
       name,
       slug,
       description,
@@ -29,13 +31,14 @@ export const createPersonController = async (req: Request, res: Response) => {
       deathDate,
     });
 
-    return sendResponse(res, 201, "Person created successfully", result);
+    return sendResponse(res, 201, "Person created successfully", person);
   } catch (error: any) {
-    if (error.message === "Person slug already exists") {
-      return sendResponse(res, 409, error.message);
+    console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Person slug already exists");
     }
 
-    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -73,38 +76,26 @@ export const getPersonByIdController = async (req: Request, res: Response) => {
 };
 
 export const updatePersonController = async (req: Request, res: Response) => {
-  const { name, slug, description, birthDate, deathDate } = req.body;
-
   try {
-    const id = Number(req.params.id);
+    const validation = updatePersonSchema.safeParse(req.body);
 
-    if (Number.isNaN(id)) {
-      return sendResponse(res, 400, "Invalid person ID");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!name || !slug) {
-      return sendResponse(res, 400, "Name and slug are required");
-    }
+    const person = await updatePersonService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updatePersonService>[1],
+    );
 
-    const result = await updatePersonService(id, {
-      name,
-      slug,
-      description,
-      birthDate,
-      deathDate,
-    });
-
-    return sendResponse(res, 200, "Person updated successfully", result);
+    return sendResponse(res, 200, "Person updated successfully", person);
   } catch (error: any) {
-    if (error.message === "Person not found") {
-      return sendResponse(res, 404, error.message);
-    }
-
-    if (error.message === "Person slug already exists") {
-      return sendResponse(res, 409, error.message);
-    }
-
     console.log(error.message || error);
+
+    if (error.code === "23505") {
+      return sendResponse(res, 409, "Person slug already exists");
+    }
+
     return sendResponse(res, 500, "Internal server error");
   }
 };

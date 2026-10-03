@@ -7,7 +7,7 @@ import {
   deletePlaceQuery,
 } from "../model/places.queries";
 
-export const createPlace = async (
+export const createPlaceService = async (
   name: string,
   description: string | null,
   latitude: number | null,
@@ -35,18 +35,20 @@ export const getPlaceById = async (id: number) => {
   return result.rows[0];
 };
 
-export const updatePlace = async (
+export const updatePlaceService = async (
   id: number,
-  name: string,
-  description: string | null,
-  latitude: number | null,
-  longitude: number | null,
+  data: {
+    name: string;
+    description: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  },
 ) => {
   const result = await pool.query(updatePlaceQuery, [
-    name,
-    description,
-    latitude,
-    longitude,
+    data.name,
+    data.description,
+    data.latitude,
+    data.longitude,
     id,
   ]);
 
