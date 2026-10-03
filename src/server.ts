@@ -25,12 +25,19 @@ import progressRoutes from "src/routes/progress.routes";
 import googleAuthRoutes from "src/routes/googleAuth.routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
-
+import cors from "cors";
 
 dotenv.config();
 
 const app: Application = express();
 app.use(express.json());
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 const port = process.env.PORT;
 
@@ -63,8 +70,6 @@ app.use("/bookmarks", bookmarkRoutes);
 app.use("/notes", noteRoutes);
 app.use("/progress", progressRoutes);
 app.use("/auth/google", googleAuthRoutes);
-
-
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);
