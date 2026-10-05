@@ -12,7 +12,8 @@ export const getPlacesByEventQuery = `
   FROM places p
   INNER JOIN event_places ep
     ON p.id = ep.place_id
-  WHERE ep.event_id = $1
+   WHERE ep.event_id = $1
+    AND p.status = 'published'
   ORDER BY p.name ASC;
 `;
 

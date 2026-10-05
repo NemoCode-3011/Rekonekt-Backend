@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   createPersonController,
   getPeopleController,
-  getPersonByIdController,
+  getPersonBySlugController,
   updatePersonController,
   deletePersonController,
 } from "../controller/people.controller";
@@ -22,7 +22,7 @@ router.post("/", verifyUser, requireRole("admin", "super admin"), createPersonCo
 router.get("/", getPeopleController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
-router.get("/:id", getPersonByIdController);
+router.get("/:slug", getPersonBySlugController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updatePersonController);
 router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deletePersonController);
 

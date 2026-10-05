@@ -1,4 +1,4 @@
-import { publicChild } from "./visibility";
+
 export const createEventQuery = `
   INSERT INTO events (
     section_id,
@@ -14,18 +14,18 @@ export const createEventQuery = `
 `;
 
 export const getEventsBySectionQuery = `
-  SELECT e.*
-  FROM events e
-  WHERE e.section_id = $1
-    AND ${publicChild("e")}
-  ORDER BY e.event_date ASC NULLS LAST;
+  SELECT *
+  FROM events
+  WHERE section_id = $1
+    AND status = 'published'
+  ORDER BY event_date ASC NULLS LAST;
 `;
 
 export const getEventByIdQuery = `
-  SELECT e.*
-  FROM events e
-  WHERE e.id = $1
-    AND ${publicChild("e")};
+  SELECT *
+  FROM events
+  WHERE id = $1
+    AND status = 'published';
 `;
 
 export const updateEventQuery = `
@@ -46,4 +46,10 @@ export const deleteEventQuery = `
   DELETE FROM events
   WHERE id = $1
   RETURNING id, title, slug;
+`;
+export const getPublishedEventsQuery = `
+  SELECT *
+  FROM events
+  WHERE status = 'published'
+  ORDER BY event_date ASC NULLS LAST;
 `;

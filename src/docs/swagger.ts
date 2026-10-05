@@ -1,5 +1,55 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
+const contentAdminPaths = (tag: string, base: string) => ({
+  [`/${base}/admin`]: {
+    get: {
+      tags: [tag],
+      summary: `List all ${base}, including drafts (admin)`,
+      security: [{ sessionCookie: [] }],
+      responses: {
+        200: { description: "Retrieved successfully" },
+        403: { description: "Access denied" },
+      },
+    },
+  },
+  [`/${base}/admin/{id}`]: {
+    get: {
+      tags: [tag],
+      summary: `Get one of ${base} by ID, any status (admin)`,
+      security: [{ sessionCookie: [] }],
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      responses: {
+        200: { description: "Retrieved successfully" },
+        404: { description: "Not found" },
+      },
+    },
+  },
+  [`/${base}/{id}/publish`]: {
+    patch: {
+      tags: [tag],
+      summary: "Publish",
+      security: [{ sessionCookie: [] }],
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      responses: {
+        200: { description: "Published successfully" },
+        404: { description: "Not found" },
+      },
+    },
+  },
+  [`/${base}/{id}/unpublish`]: {
+    patch: {
+      tags: [tag],
+      summary: "Unpublish (back to draft)",
+      security: [{ sessionCookie: [] }],
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      responses: {
+        200: { description: "Unpublished successfully" },
+        404: { description: "Not found" },
+      },
+    },
+  },
+});
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -25,6 +75,12 @@ const options = {
     ],
 
     paths: {
+      ...contentAdminPaths("Events", "events"),
+      ...contentAdminPaths("Artifacts", "artifacts"),
+      ...contentAdminPaths("People", "people"),
+      ...contentAdminPaths("Places", "places"),
+      ...contentAdminPaths("Stories", "stories"),
+
       "/auth/signup": {
         post: {
           tags: ["Authentication"],
@@ -444,6 +500,16 @@ const options = {
         },
       },
 
+      "/sections/admin/exhibitions/{exhibitionId}": {
+        get: {
+          tags: ["Sections"],
+          summary: "Get all sections of an exhibition, even if it is a draft (admin)",
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: "exhibitionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 200: { description: "Sections retrieved successfully" } },
+        },
+      },
+
       "/sections/{id}": {
         get: {
           tags: ["Sections"],
@@ -495,6 +561,13 @@ const options = {
         },
       },
       "/stories": {
+        get: {
+          tags: ["Stories"],
+          summary: "Get all published stories",
+          responses: {
+            200: { description: "Stories retrieved successfully" },
+          },
+        },
         post: {
           tags: ["Stories"],
           summary: "Create a story",
@@ -584,25 +657,6 @@ const options = {
             },
           },
         },
-        "/stories/{id}/publish": {
-          patch: {
-            tags: ["Stories"],
-            summary: "Publish a story",
-            security: [{ sessionCookie: [] }],
-            parameters: [
-              {
-                name: "id",
-                in: "path",
-                required: true,
-                schema: { type: "integer" },
-              },
-            ],
-            responses: {
-              200: { description: "Story published successfully" },
-              404: { description: "Story not found" },
-            },
-          },
-        },
         "/stories/admin/sections/{sectionId}": {
           get: {
             tags: ["Stories"],
@@ -624,6 +678,13 @@ const options = {
         },
       },
       "/events": {
+        get: {
+          tags: ["Events"],
+          summary: "Get all published events",
+          responses: {
+            200: { description: "Events retrieved successfully" },
+          },
+        },
         post: {
           tags: ["Events"],
           summary: "Create an event",
@@ -720,22 +781,6 @@ const options = {
       },
 
       "/people/{id}": {
-        get: {
-          tags: ["People"],
-          summary: "Get person by ID",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "integer" },
-            },
-          ],
-          responses: {
-            200: { description: "Person retrieved successfully" },
-            404: { description: "Person not found" },
-          },
-        },
         patch: {
           tags: ["People"],
           summary: "Update person",
@@ -766,6 +811,24 @@ const options = {
           ],
           responses: {
             200: { description: "Person deleted successfully" },
+          },
+        },
+      },
+      "/people/{slug}": {
+        get: {
+          tags: ["People"],
+          summary: "Get a published person by slug",
+          parameters: [
+            {
+              name: "slug",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: { description: "Person retrieved successfully" },
+            404: { description: "Person not found" },
           },
         },
       },
@@ -991,21 +1054,6 @@ const options = {
       },
 
       "/artifacts/{id}": {
-        get: {
-          tags: ["Artifacts"],
-          summary: "Get artifact by ID",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "integer" },
-            },
-          ],
-          responses: {
-            200: { description: "Artifact retrieved successfully" },
-          },
-        },
         patch: {
           tags: ["Artifacts"],
           summary: "Update artifact",
@@ -1036,6 +1084,42 @@ const options = {
           ],
           responses: {
             200: { description: "Artifact deleted successfully" },
+          },
+        },
+      },
+      "/artifacts/{slug}": {
+        get: {
+          tags: ["Artifacts"],
+          summary: "Get a published artifact by slug",
+          parameters: [
+            {
+              name: "slug",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: { description: "Artifact retrieved successfully" },
+            404: { description: "Artifact not found" },
+          },
+        },
+      },
+      "/search": {
+        get: {
+          tags: ["Search"],
+          summary: "Search published content",
+          parameters: [
+            {
+              name: "q",
+              in: "query",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: { description: "Search results retrieved" },
+            400: { description: "Query too short" },
           },
         },
       },

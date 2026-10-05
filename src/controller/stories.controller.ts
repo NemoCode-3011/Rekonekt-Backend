@@ -11,6 +11,7 @@ import {
   getStoryBySlugService,
   getDiscoveryStoryService,
   getAllStoriesBySectionService,
+  getPublishedStoriesService,
 } from "../service/stories.service";
 import {
   updateStorySchema,
@@ -218,6 +219,16 @@ export const getAdminStoriesBySectionController = async (
     }
 
     const result = await getAllStoriesBySectionService(sectionId);
+
+    return sendResponse(res, 200, "Stories retrieved successfully", result);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getPublishedStoriesController = async (req: Request,res: Response,) => {
+  try {
+    const result = await getPublishedStoriesService();
 
     return sendResponse(res, 200, "Stories retrieved successfully", result);
   } catch (error: any) {

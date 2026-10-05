@@ -15,28 +15,28 @@ export const createStoryQuery = `
 `;
 
 export const getStoriesBySectionQuery = `
-  SELECT st.*
-  FROM stories st
-  WHERE st.section_id = $1
-    AND ${publicChild("st")}
-  ORDER BY st.created_at ASC;
+  SELECT *
+  FROM stories
+  WHERE section_id = $1
+    AND status = 'published'
+  ORDER BY created_at ASC;
 `;
 
 export const getDiscoveryStoryQuery = `
-  SELECT st.id, st.title, st.slug, st.excerpt, st.cover_image_url, st.published_at
-  FROM stories st
-  WHERE st.is_discovery = TRUE
-    AND ${publicChild("st")}
-  ORDER BY st.published_at DESC
+  SELECT id, title, slug, excerpt, cover_image_url, published_at
+  FROM stories
+  WHERE status = 'published'
+    AND is_discovery = TRUE
+  ORDER BY published_at DESC
   LIMIT 1;
 `;
 
 export const getStoryBySlugQuery = `
-  SELECT st.id, st.section_id, st.title, st.slug, st.excerpt, st.content,
-         st.cover_image_url, st.is_discovery, st.published_at
-  FROM stories st
-  WHERE st.slug = $1
-    AND ${publicChild("st")};
+  SELECT id, section_id, title, slug, excerpt, content,
+         cover_image_url, is_discovery, published_at
+  FROM stories
+  WHERE slug = $1
+    AND status = 'published';
 `;
 
 export const getAllStoriesBySectionQuery = `
@@ -50,6 +50,13 @@ export const getStoryByIdQuery = `
   SELECT *
   FROM stories
   WHERE id = $1;
+`;
+
+export const getPublishedStoriesQuery = `
+  SELECT id, title, slug, excerpt, cover_image_url, published_at
+  FROM stories
+  WHERE status = 'published'
+  ORDER BY published_at DESC;
 `;
 
 export const updateStoryQuery = `

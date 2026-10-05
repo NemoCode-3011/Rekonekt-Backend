@@ -6,6 +6,7 @@ import {
   getArtifactByIdQuery,
   updateArtifactQuery,
   deleteArtifactQuery,
+  getArtifactBySlugQuery,
 } from "../model/artifacts.queries";
 
 export const createArtifactService = async (artifactData: {
@@ -14,9 +15,9 @@ export const createArtifactService = async (artifactData: {
   slug: string;
   artifactType: string | null;
   description: string | null;
-  historicalContext: string | null,
-  dateDisplay: string | null,
-  placeId: number | null,
+  historicalContext: string | null;
+  dateDisplay: string | null;
+  placeId: number | null;
 }) => {
   const client = await pool.connect();
 
@@ -59,29 +60,29 @@ export const getArtifactById = async (id: number) => {
 export const updateArtifact = async (
   id: number,
   data: {
-    sectionId: number,
-    title: string,
-    slug: string,
-    artifactType: string | null,
-    description: string | null,
-    historicalContext: string | null,
-    dateDisplay: string | null,
-    placeId: number | null,
-  }
+    sectionId: number;
+    title: string;
+    slug: string;
+    artifactType: string | null;
+    description: string | null;
+    historicalContext: string | null;
+    dateDisplay: string | null;
+    placeId: number | null;
+  },
 ) => {
   const client = await pool.connect();
 
   try {
     const result = await client.query(updateArtifactQuery, [
-     data.sectionId,
-  data.title,
-  data.slug,
-  data.artifactType,
-  data.description,
-  data.historicalContext,
-  data.dateDisplay,
-  data.placeId,
-  id,
+      data.sectionId,
+      data.title,
+      data.slug,
+      data.artifactType,
+      data.description,
+      data.historicalContext,
+      data.dateDisplay,
+      data.placeId,
+      id,
     ]);
 
     return result.rows[0];
@@ -100,4 +101,9 @@ export const deleteArtifact = async (id: number) => {
   } finally {
     client.release();
   }
+};
+export const getArtifactBySlug = async (slug: string) => {
+  const result = await pool.query(getArtifactBySlugQuery, [slug]);
+
+  return result.rows[0];
 };

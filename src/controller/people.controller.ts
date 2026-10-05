@@ -7,6 +7,7 @@ import {
   getPersonByIdService,
   updatePersonService,
   deletePersonService,
+  getPersonBySlugService,
 } from "../service/people.service";
 import {
   createPersonSchema,
@@ -111,6 +112,23 @@ export const deletePersonController = async (req: Request, res: Response) => {
     const result = await deletePersonService(id);
 
     return sendResponse(res, 200, "Person deleted successfully", result);
+  } catch (error: any) {
+    if (error.message === "Person not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getPersonBySlugController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getPersonBySlugService(String(req.params.slug));
+
+    return sendResponse(res, 200, "Person retrieved successfully", result);
   } catch (error: any) {
     if (error.message === "Person not found") {
       return sendResponse(res, 404, error.message);

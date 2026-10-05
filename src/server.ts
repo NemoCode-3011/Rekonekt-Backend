@@ -23,6 +23,7 @@ import bookmarkRoutes from "src/routes/bookmarks.routes";
 import noteRoutes from "src/routes/note.routes";
 import progressRoutes from "src/routes/progress.routes";
 import googleAuthRoutes from "src/routes/googleAuth.routes";
+import searchRoutes from "src/routes/search.routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
@@ -70,6 +71,7 @@ app.use("/bookmarks", bookmarkRoutes);
 app.use("/notes", noteRoutes);
 app.use("/progress", progressRoutes);
 app.use("/auth/google", googleAuthRoutes);
+app.use("/search", searchRoutes);
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

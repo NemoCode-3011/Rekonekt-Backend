@@ -12,7 +12,8 @@ export const getPeopleByEventQuery = `
   FROM people p
   INNER JOIN event_people ep
     ON p.id = ep.person_id
-  WHERE ep.event_id = $1
+    WHERE ep.event_id = $1
+    AND p.status = 'published'
   ORDER BY p.name ASC;
 `;
 

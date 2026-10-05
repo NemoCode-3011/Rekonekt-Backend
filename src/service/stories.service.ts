@@ -9,6 +9,7 @@ import {
   getStoryBySlugQuery,
   getDiscoveryStoryQuery,
   getAllStoriesBySectionQuery,
+  getPublishedStoriesQuery,
 } from "../model/stories.queries";
 
 export const createStoryService = async (data: {
@@ -83,7 +84,7 @@ export const updateStoryService = async (
       data.excerpt ?? null,
       data.content ?? null,
       data.coverImageUrl ?? null,
-      data.isDiscovery ?? false,
+      data.isDiscovery ?? null,
       id,
     ]);
     if (result.rows.length === 0) {
@@ -142,4 +143,10 @@ export const publishStoryService = async (id: number) => {
   }
 
   return result.rows[0];
+};
+
+export const getPublishedStoriesService = async () => {
+  const result = await pool.query(getPublishedStoriesQuery);
+
+  return result.rows;
 };

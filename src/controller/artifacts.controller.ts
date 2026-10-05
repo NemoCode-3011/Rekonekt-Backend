@@ -6,6 +6,7 @@ import {
   getArtifactById,
   updateArtifact,
   deleteArtifact,
+  getArtifactBySlug,
 } from "../service/artifacts.service";
 import { sendResponse } from "../utils/response";
 import {
@@ -166,6 +167,23 @@ export const deleteArtifactController = async (req: Request, res: Response) => {
     }
 
     return sendResponse(res, 200, "Artifact deleted successfully", artifact);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getArtifactBySlugController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const artifact = await getArtifactBySlug(String(req.params.slug));
+
+    if (!artifact) {
+      return sendResponse(res, 404, "Artifact not found");
+    }
+
+    return sendResponse(res, 200, "Artifact retrieved successfully", artifact);
   } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");

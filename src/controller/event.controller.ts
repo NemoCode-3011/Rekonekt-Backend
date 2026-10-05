@@ -7,6 +7,7 @@ import {
   getEventByIdService,
   updateEventService,
   deleteEventService,
+  getPublishedEventsService,
 } from "src/service/event.service";
 import {
   createEventSchema,
@@ -134,6 +135,19 @@ export const deleteEventController = async (req: Request, res: Response) => {
       return sendResponse(res, 404, error.message);
     }
 
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getPublishedEventsController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getPublishedEventsService();
+
+    return sendResponse(res, 200, "Events retrieved successfully", result);
+  } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }

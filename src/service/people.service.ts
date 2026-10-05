@@ -6,6 +6,7 @@ import {
   getPersonByIdQuery,
   updatePersonQuery,
   deletePersonQuery,
+  getPersonBySlugQuery,
 } from "../model/people.queries";
 
 export const createPersonService = async (data: {
@@ -86,6 +87,15 @@ export const updatePersonService = async (
 
 export const deletePersonService = async (id: number) => {
   const result = await pool.query(deletePersonQuery, [id]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Person not found");
+  }
+
+  return result.rows[0];
+};
+export const getPersonBySlugService = async (slug: string) => {
+  const result = await pool.query(getPersonBySlugQuery, [slug]);
 
   if (result.rows.length === 0) {
     throw new Error("Person not found");

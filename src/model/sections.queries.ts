@@ -14,18 +14,16 @@ export const createSectionQuery = `
 `;
 
 export const getSectionsByExhibitionQuery = `
-  SELECT s.*
-  FROM sections s
-  WHERE s.exhibition_id = $1
-    AND ${publicSection("s")}
-  ORDER BY s.section_order ASC;
+  SELECT *
+  FROM sections
+  WHERE exhibition_id = $1
+  ORDER BY section_order ASC;
 `;
 
 export const getSectionByIdQuery = `
-  SELECT s.*
-  FROM sections s
-  WHERE s.id = $1
-    AND ${publicSection("s")};
+  SELECT *
+  FROM sections
+  WHERE id = $1;
 `;
 
 export const getAllSectionsByExhibitionQuery = `

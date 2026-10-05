@@ -5,6 +5,7 @@ import {
   createEventController,
   getEventsBySectionController,
   getEventByIdController,
+  getPublishedEventsController,
   updateEventController,
   deleteEventController,
 } from "src/controller/event.controller";
@@ -24,6 +25,7 @@ router.get("/sections/:sectionId", getEventsBySectionController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
 router.get("/:id", getEventByIdController);
+router.get("/", getPublishedEventsController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateEventController);
 router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deleteEventController);
 export default router;

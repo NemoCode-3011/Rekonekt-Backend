@@ -3,7 +3,7 @@ import {
   createArtifactController,
   getArtifactsController,
   getArtifactsBySectionController,
-  getArtifactByIdController,
+  getArtifactBySlugController,
   updateArtifactController,
   deleteArtifactController,
 } from "../controller/artifacts.controller";
@@ -23,7 +23,7 @@ router.get("/", getArtifactsController);
 router.get("/sections/:sectionId", getArtifactsBySectionController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
-router.get("/:id", getArtifactByIdController);
+router.get("/:slug", getArtifactBySlugController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateArtifactController);
 router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deleteArtifactController);
 
