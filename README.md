@@ -1,199 +1,113 @@
 # REKONEKT Backend
 
-Backend API for **REKONEKT**, a digital museum of Nigerian history.
+Backend API for **REKONEKT**, a digital museum of Nigerian history. The API serves exhibitions, stories, events, people, places, artifacts, media, and sources, with visitor accounts and admin content management.
 
-REKONEKT is being built to make Nigerian history more accessible through exhibitions, stories, events, people, places, artifacts, documents, and sources.
+## Tech stack
 
-## Tech Stack
+- Node.js, TypeScript, and Express
+- PostgreSQL for application data
+- Redis for user sessions
+- Zod for request validation
+- Swagger / OpenAPI for API documentation
+- Optional integrations: Cloudflare R2 for media storage, Nodemailer for email, and Google sign-in
 
-- Node.js
-- TypeScript
-- Express.js
-- PostgreSQL
-- Redis
-- Docker
-- Zod
-- Cloudflare R2
-- Nodemailer
-- Swagger / OpenAPI
+## Requirements
 
-## Features
+- Node.js and npm
+- Docker Desktop (or Docker Engine with the Compose plugin)
 
-- User registration and email verification
-- OTP authentication
-- Password reset
-- Redis-based sessions
-- HTTP-only session cookies
-- Google authentication
-- Role-based authorization
-- Exhibition management
-- Sections and stories
-- Historical events
-- People and places
-- Artifacts
-- Media uploads
-- Source and citation management
-- Bookmarks
-- Personal notes
-- Exhibition progress tracking
-- API documentation
+## Local setup
 
-## Architecture
+1. Install dependencies:
 
-The backend follows a simple layered structure:
+   ```sh
+   npm install
+   ```
+
+2. Create a `.env` file in the project root. The checked-in `.env.example` is currently empty, so add the values below yourself:
+
+   ```dotenv
+   PORT=3003
+   DB_USER=postgres
+   DB_HOST=localhost
+   DB_PASSWORD=postgres
+   DB_PORT=5433
+   DB_NAME=rekonekt
+   SUPER_ADMIN_NAME=REKONEKT Admin
+   SUPER_ADMIN_EMAIL=admin@example.com
+   SUPER_ADMIN_PASSWORD=change-this-password
+   ```
+
+   Use your own secure admin password. `.env` is git-ignored; do not commit it.
+
+3. Start PostgreSQL and Redis:
+
+   ```sh
+   docker compose up -d
+   ```
+
+   The Compose file exposes PostgreSQL on `localhost:5433` and Redis on `localhost:6379`. Redis currently uses this local URL in the application.
+
+4. Create the database tables:
+
+   ```sh
+   npm run migrate
+   ```
+
+5. Create the initial super-admin account:
+
+   ```sh
+   npm run seed
+   ```
+
+6. Start the development server:
+
+   ```sh
+   npm run dev
+   ```
+
+   The API runs on the port configured in `.env` (shown above as `3003`). Check `http://localhost:3003/health` and open `http://localhost:3003/api-docs` for Swagger.
+
+## Frontend connection
+
+CORS currently allows `http://localhost:5173`. If your frontend runs at a different origin, update the allowed origin in `src/server.ts`.
+
+## Optional integrations
+
+Add the relevant settings to `.env` if you use these features:
+
+- Email delivery: `SMTP_USER`, `SMTP_PASSWORD`
+- Google sign-in: `GOOGLE_CLIENT_ID`
+- Cloudflare R2 media storage: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_URL`
+
+## Useful commands
+
+```sh
+npm run dev       # Start the development server
+npm run build     # Compile TypeScript into dist/
+npm start         # Run the compiled server
+npm run migrate   # Initialize the database schema
+npm run seed      # Create the initial super-admin account
+```
+
+## Project structure
 
 ```text
-Routes
-  ↓
-Controllers
-  ↓
-Services
-  ↓
-SQL Queries
-  ↓
-PostgreSQL
-
-
-Authentication sessions are stored in Redis and identified through an HTTP-only cookie.
-
-Museum media is stored in Cloudflare R2, while PostgreSQL stores the media metadata and relationships.
-
-Project Structure
 src/
-├── config/
-├── controller/
-├── database/
-├── docs/
-├── middleware/
-├── model/
-├── routes/
-├── service/
-├── types/
-├── utils/
-├── validation/
-└── server.ts
+├── config/       # External service configuration
+├── controller/   # HTTP request handlers
+├── database/     # PostgreSQL connection, schema, and seed
+├── docs/         # Swagger/OpenAPI definition
+├── middleware/   # Authentication and authorization
+├── model/        # SQL queries
+├── routes/       # Express route definitions
+├── service/      # Application and database operations
+├── utils/        # Shared helpers
+└── validation/   # Request schemas
+```
 
+The API uses a layered flow: routes → controllers → services → SQL queries → PostgreSQL. User sessions are stored in Redis and sent through HTTP-only cookies.
 
-GETTING STARTED:
+## Current exhibition
 
-
-Prerequisites
-
-You will need:
-
-1.Node.js
-2.Docker
-3.npm
-4.Installation
-5.git clone <repository-url>
-6.cd rekonekt-backend
-7.npm install
-
-Create your environment file:
-
-1.cp .env.example .env
-
-2.Add your own configuration values to .env.
-
-3.Database
-
-4.Start PostgreSQL and Redis with Docker:
-
-5.docker compose up -d
-
-6.Run the database migration:
-
-npx tsx migrate.ts
-Development
-npm run dev
-Build
-npm run build
-API Documentation
-
-When the server is running, Swagger documentation is available at:
-
-http://localhost:3003/api-docs
-
-Authentication
-
-REKONEKT uses server-side sessions rather than JWTs.
-
-Client
-  ↓
-HTTP-only session cookie
-  ↓
-Express
-  ↓
-Redis
-  ↓
-PostgreSQL
-
-Sessions expire after seven days.
-
-## Roles
-
-Visitor
-
-Can explore the museum and manage personal features such as:
-
-Bookmarks
-Notes
-Progress
-
-
-## Admin
-
-Can manage museum content.
-
-## Super Admin
-
-Has administrative privileges including admin management.
-
-Media Storage
-
-Media files are uploaded to Cloudflare R2.
-
-PostgreSQL stores the associated metadata and relationships between media and museum content.
-
-
-API
-
-The API is organized around museum resources including:
-
-Exhibitions
-Sections
-Stories
-Events
-People
-Places
-Artifacts
-Media
-Sources
-Bookmarks
-Notes
-Progress
-Current Exhibition
-
-The first exhibition being developed is:
-
-The Aburi Accord
-
-The backend is designed to support additional exhibitions and historical collections in the future.
-
-
-### One change before you paste it
-
-Don't use:
-
-```text
-http://localhost:3003
-
-if your .env uses a different PORT.
-
-Use whatever your actual local port is.
-
-Also, we'll replace:
-
-<repository-url>
-
-with your actual GitHub URL once the repo is set up.
+The first exhibition being developed is **The Aburi Accord**. The backend is intended to support additional exhibitions and historical collections.
