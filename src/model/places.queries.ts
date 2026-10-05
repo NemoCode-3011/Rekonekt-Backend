@@ -1,3 +1,5 @@
+import { publicStandalone } from "./visibility";
+
 export const createPlaceQuery = `
   INSERT INTO places (
     name,
@@ -10,15 +12,17 @@ export const createPlaceQuery = `
 `;
 
 export const getPlacesQuery = `
-  SELECT *
-  FROM places
-  ORDER BY name ASC;
+  SELECT pl.*
+  FROM places pl
+  WHERE ${publicStandalone("pl")}
+  ORDER BY pl.name ASC;
 `;
 
 export const getPlaceByIdQuery = `
-  SELECT *
-  FROM places
-  WHERE id = $1;
+  SELECT pl.*
+  FROM places pl
+  WHERE pl.id = $1
+    AND ${publicStandalone("pl")};
 `;
 
 export const updatePlaceQuery = `

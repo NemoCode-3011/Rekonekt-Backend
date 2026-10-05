@@ -5,6 +5,7 @@ import {
   getSectionByIdQuery,
   updateSectionQuery,
   deleteSectionQuery,
+  getAllSectionsByExhibitionQuery,
 } from "../model/sections.queries";
 
 export const createSectionService = async (data: {
@@ -58,6 +59,12 @@ export const getSectionByIdService = async (id: number) => {
   }
 
   return result.rows[0];
+};
+
+export const getAllSectionsByExhibitionService = async (exhibitionId: number) => {
+  const result = await pool.query(getAllSectionsByExhibitionQuery, [exhibitionId]);
+
+  return result.rows;
 };
 
 export const updateSectionService = async (

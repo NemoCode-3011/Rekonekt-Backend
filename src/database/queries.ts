@@ -236,3 +236,28 @@ export const alterUsersTableAddGoogleId = `
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
 `;
+export const alterStoriesTableAddIsDiscovery = `
+  ALTER TABLE stories
+  ADD COLUMN IF NOT EXISTS is_discovery BOOLEAN NOT NULL DEFAULT FALSE;
+`;
+export const alterContentTablesAddStatus = `
+DO $$
+DECLARE t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['events', 'artifacts', 'people', 'places']
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = t
+        AND column_name = 'status'
+    ) THEN
+      -- Existing rows count as published; new rows default to draft
+      EXECUTE format('ALTER TABLE %I ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT ''published'' CHECK (status IN (''draft'', ''published'', ''archived''))', t);
+      EXECUTE format('ALTER TABLE %I ALTER COLUMN status SET DEFAULT ''draft''', t);
+      EXECUTE format('ALTER TABLE %I ADD COLUMN published_at TIMESTAMP', t);
+      EXECUTE format('UPDATE %I SET published_at = COALESCE(created_at, CURRENT_TIMESTAMP)', t);
+    END IF;
+  END LOOP;
+END $$;
+`;

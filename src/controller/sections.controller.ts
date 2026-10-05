@@ -7,6 +7,7 @@ import {
   getSectionByIdService,
   updateSectionService,
   deleteSectionService,
+  getAllSectionsByExhibitionService,
 } from "../service/sections.service";
 import {
   createSectionSchema,
@@ -89,6 +90,23 @@ export const getSectionByIdController = async (req: Request, res: Response) => {
       return sendResponse(res, 404, error.message);
     }
 
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminSectionsByExhibitionController = async (req: Request,res: Response,) => {
+  try {
+    const exhibitionId = Number(req.params.exhibitionId);
+
+    if (Number.isNaN(exhibitionId)) {
+      return sendResponse(res, 400, "Invalid exhibition ID");
+    }
+
+    const result = await getAllSectionsByExhibitionService(exhibitionId);
+
+    return sendResponse(res, 200, "Sections retrieved successfully", result);
+  } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }

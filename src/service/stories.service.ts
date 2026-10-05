@@ -5,6 +5,10 @@ import {
   getStoryByIdQuery,
   updateStoryQuery,
   deleteStoryQuery,
+  publishStoryQuery,
+  getStoryBySlugQuery,
+  getDiscoveryStoryQuery,
+  getAllStoriesBySectionQuery,
 } from "../model/stories.queries";
 
 export const createStoryService = async (data: {
@@ -54,25 +58,32 @@ export const getStoryByIdService = async (id: number) => {
 
   return result.rows[0];
 };
+export const getAllStoriesBySectionService = async (sectionId: number) => {
+  const result = await pool.query(getAllStoriesBySectionQuery, [sectionId]);
+
+  return result.rows;
+};
 
 export const updateStoryService = async (
   id: number,
   data: {
-    sectionId: number;
+    sectionId?: number;
     title: string;
     slug: string;
     excerpt?: string;
     content?: string;
     coverImageUrl?: string;
+    isDiscovery?: boolean;
   },
 ) => {
   try {
     const result = await pool.query(updateStoryQuery, [
       data.title,
       data.slug,
-      data.excerpt,
-      data.content,
-      data.coverImageUrl,
+      data.excerpt ?? null,
+      data.content ?? null,
+      data.coverImageUrl ?? null,
+      data.isDiscovery ?? false,
       id,
     ]);
     if (result.rows.length === 0) {
@@ -95,6 +106,36 @@ export const updateStoryService = async (
 
 export const deleteStoryService = async (id: number) => {
   const result = await pool.query(deleteStoryQuery, [id]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Story not found");
+  }
+
+  return result.rows[0];
+};
+
+export const getDiscoveryStoryService = async () => {
+  const result = await pool.query(getDiscoveryStoryQuery);
+
+  if (result.rows.length === 0) {
+    throw new Error("Discovery story not found");
+  }
+
+  return result.rows[0];
+};
+
+export const getStoryBySlugService = async (slug: string) => {
+  const result = await pool.query(getStoryBySlugQuery, [slug]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Story not found");
+  }
+
+  return result.rows[0];
+};
+
+export const publishStoryService = async (id: number) => {
+  const result = await pool.query(publishStoryQuery, [id]);
 
   if (result.rows.length === 0) {
     throw new Error("Story not found");

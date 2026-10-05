@@ -1,3 +1,5 @@
+import { publicChild } from "./visibility";
+
 export const createArtifactQuery = `
   INSERT INTO artifacts (
     section_id,
@@ -14,22 +16,25 @@ export const createArtifactQuery = `
 `;
 
 export const getArtifactsQuery = `
-  SELECT *
-  FROM artifacts
-  ORDER BY title ASC;
+  SELECT a.*
+  FROM artifacts a
+  WHERE ${publicChild("a")}
+  ORDER BY a.title ASC;
 `;
 
 export const getArtifactsBySectionQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE section_id = $1
-  ORDER BY title ASC;
+  SELECT a.*
+  FROM artifacts a
+  WHERE a.section_id = $1
+    AND ${publicChild("a")}
+  ORDER BY a.title ASC;
 `;
 
 export const getArtifactByIdQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE id = $1;
+  SELECT a.*
+  FROM artifacts a
+  WHERE a.id = $1
+    AND ${publicChild("a")};
 `;
 
 export const updateArtifactQuery = `

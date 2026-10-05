@@ -7,6 +7,10 @@ import {
   getStoryByIdService,
   updateStoryService,
   deleteStoryService,
+  publishStoryService,
+  getStoryBySlugService,
+  getDiscoveryStoryService,
+  getAllStoriesBySectionService,
 } from "../service/stories.service";
 import {
   updateStorySchema,
@@ -35,12 +39,15 @@ export const createStoryController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 201, "Story created successfully", story);
   } catch (error: any) {
-    console.log(error.message || error);
-
-    if (error.code === "23505") {
-      return sendResponse(res, 409, "Story slug already exists");
+    if (error.message === "Story slug already exists") {
+      return sendResponse(res, 409, error.message);
     }
 
+    if (error.message === "Section not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -88,6 +95,12 @@ export const getStoryByIdController = async (req: Request, res: Response) => {
 
 export const updateStoryController = async (req: Request, res: Response) => {
   try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid story ID");
+    }
+
     const validation = updateStorySchema.safeParse(req.body);
 
     if (!validation.success) {
@@ -95,21 +108,25 @@ export const updateStoryController = async (req: Request, res: Response) => {
     }
 
     const story = await updateStoryService(
-      Number(req.params.id),
+      id,
       validation.data as Parameters<typeof updateStoryService>[1],
     );
 
     return sendResponse(res, 200, "Story updated successfully", story);
   } catch (error: any) {
-    console.log(error.message || error);
-
-    if (error.code === "23505") {
-      return sendResponse(res, 409, "Story slug already exists");
+    if (error.message === "Story not found") {
+      return sendResponse(res, 404, error.message);
     }
 
+    if (error.message === "Story slug already exists") {
+      return sendResponse(res, 409, error.message);
+    }
+
+    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
+
 export const deleteStoryController = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -126,6 +143,84 @@ export const deleteStoryController = async (req: Request, res: Response) => {
       return sendResponse(res, 404, error.message);
     }
 
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getDiscoveryStoryController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getDiscoveryStoryService();
+
+    return sendResponse(
+      res,
+      200,
+      "Discovery story retrieved successfully",
+      result,
+    );
+  } catch (error: any) {
+    if (error.message === "Discovery story not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getStoryBySlugController = async (req: Request, res: Response) => {
+  try {
+    const result = await getStoryBySlugService(String(req.params.slug));
+
+    return sendResponse(res, 200, "Story retrieved successfully", result);
+  } catch (error: any) {
+    if (error.message === "Story not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const publishStoryController = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid story ID");
+    }
+
+    const result = await publishStoryService(id);
+
+    return sendResponse(res, 200, "Story published successfully", result);
+  } catch (error: any) {
+    if (error.message === "Story not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminStoriesBySectionController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const sectionId = Number(req.params.sectionId);
+
+    if (Number.isNaN(sectionId)) {
+      return sendResponse(res, 400, "Invalid section ID");
+    }
+
+    const result = await getAllStoriesBySectionService(sectionId);
+
+    return sendResponse(res, 200, "Stories retrieved successfully", result);
+  } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }

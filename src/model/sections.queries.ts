@@ -1,3 +1,5 @@
+import { publicSection } from "./visibility";
+
 export const createSectionQuery = `
   INSERT INTO sections (
     exhibition_id,
@@ -12,16 +14,25 @@ export const createSectionQuery = `
 `;
 
 export const getSectionsByExhibitionQuery = `
+  SELECT s.*
+  FROM sections s
+  WHERE s.exhibition_id = $1
+    AND ${publicSection("s")}
+  ORDER BY s.section_order ASC;
+`;
+
+export const getSectionByIdQuery = `
+  SELECT s.*
+  FROM sections s
+  WHERE s.id = $1
+    AND ${publicSection("s")};
+`;
+
+export const getAllSectionsByExhibitionQuery = `
   SELECT *
   FROM sections
   WHERE exhibition_id = $1
   ORDER BY section_order ASC;
-`;
-
-export const getSectionByIdQuery = `
-  SELECT *
-  FROM sections
-  WHERE id = $1;
 `;
 
 export const updateSectionQuery = `

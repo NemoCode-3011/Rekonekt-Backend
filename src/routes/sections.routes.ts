@@ -5,13 +5,13 @@ import {
   getSectionByIdController,
   updateSectionController,
   deleteSectionController,
+  getAdminSectionsByExhibitionController,
 } from "../controller/sections.controller";
 import { verifyUser } from "src/middleware/auth.middleware";
-import { requireSuperAdmin } from "src/middleware/role.middleware";
 import { requireRole } from "@middleware/authorize";
 
 const router = Router();
-
+router.get( "/admin/exhibitions/:exhibitionId", verifyUser, requireRole("admin", "super admin"), getAdminSectionsByExhibitionController,);
 router.post("/",verifyUser,requireRole("admin", "super admin"),createSectionController);
 router.get("/exhibitions/:exhibitionId",getSectionsByExhibitionController);
 router.get("/:id", getSectionByIdController);

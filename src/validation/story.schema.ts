@@ -23,12 +23,10 @@ export const createStorySchema = z.object({
     .max(255, "Slug must not exceed 255 characters")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must contain only lowercase letters, numbers, and hyphens"
+      "Slug must contain only lowercase letters, numbers, and hyphens",
     ),
 
-  excerpt: z
-    .string()
-    .optional(),
+  excerpt: z.string().optional(),
 
   content: z
     .string({
@@ -36,14 +34,10 @@ export const createStorySchema = z.object({
     })
     .min(1, "Content is required"),
 
-  coverImageUrl: z
-    .string()
-    .url("Invalid cover image URL")
-    .optional(),
+  coverImageUrl: z.string().url("Invalid cover image URL").optional(),
 });
 
 export const updateStorySchema = createStorySchema
-  .omit({
-    sectionId: true,
-  })
-  .partial();
+  .omit({ sectionId: true })
+  .partial()
+  .extend({ isDiscovery: z.boolean().optional() });

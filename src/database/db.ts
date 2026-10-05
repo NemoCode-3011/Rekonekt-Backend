@@ -24,6 +24,8 @@ import {
   createProgressTable,
   alterUsersTableAddIsVerified,
   alterUsersTableAddGoogleId,
+  alterStoriesTableAddIsDiscovery,
+  alterContentTablesAddStatus,
 } from "./queries";
 
 dotenv.config();
@@ -87,8 +89,12 @@ export const createTables = async () => {
     console.log("progress table created");
     await client.query(alterUsersTableAddIsVerified);
     console.log("user table altered");
-    await client.query(alterUsersTableAddGoogleId)
-    console.log("users table altered for google")
+    await client.query(alterUsersTableAddGoogleId);
+    console.log("users table altered for google");
+    await client.query(alterStoriesTableAddIsDiscovery);
+    console.log("stories table altered for discovery");
+        await client.query(alterContentTablesAddStatus);
+    console.log("content tables altered for publishing");
   } catch (error) {
     console.error("Error creating tables:", error);
     throw error;

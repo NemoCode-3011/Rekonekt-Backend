@@ -1,3 +1,4 @@
+import { publicChild } from "./visibility";
 export const createEventQuery = `
   INSERT INTO events (
     section_id,
@@ -13,16 +14,18 @@ export const createEventQuery = `
 `;
 
 export const getEventsBySectionQuery = `
-  SELECT *
-  FROM events
-  WHERE section_id = $1
-  ORDER BY event_date ASC NULLS LAST;
+  SELECT e.*
+  FROM events e
+  WHERE e.section_id = $1
+    AND ${publicChild("e")}
+  ORDER BY e.event_date ASC NULLS LAST;
 `;
 
 export const getEventByIdQuery = `
-  SELECT *
-  FROM events
-  WHERE id = $1;
+  SELECT e.*
+  FROM events e
+  WHERE e.id = $1
+    AND ${publicChild("e")};
 `;
 
 export const updateEventQuery = `

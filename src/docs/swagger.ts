@@ -524,21 +524,6 @@ const options = {
       },
 
       "/stories/{id}": {
-        get: {
-          tags: ["Stories"],
-          summary: "Get story by ID",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "integer" },
-            },
-          ],
-          responses: {
-            200: { description: "Story retrieved successfully" },
-          },
-        },
         patch: {
           tags: ["Stories"],
           summary: "Update story",
@@ -569,6 +554,72 @@ const options = {
           ],
           responses: {
             200: { description: "Story deleted successfully" },
+          },
+        },
+        "/stories/discovery": {
+          get: {
+            tags: ["Stories"],
+            summary: "Get the current discovery story",
+            responses: {
+              200: { description: "Discovery story retrieved successfully" },
+              404: { description: "Discovery story not found" },
+            },
+          },
+        },
+        "/stories/{slug}": {
+          get: {
+            tags: ["Stories"],
+            summary: "Get a published story by slug",
+            parameters: [
+              {
+                name: "slug",
+                in: "path",
+                required: true,
+                schema: { type: "string" },
+              },
+            ],
+            responses: {
+              200: { description: "Story retrieved successfully" },
+              404: { description: "Story not found" },
+            },
+          },
+        },
+        "/stories/{id}/publish": {
+          patch: {
+            tags: ["Stories"],
+            summary: "Publish a story",
+            security: [{ sessionCookie: [] }],
+            parameters: [
+              {
+                name: "id",
+                in: "path",
+                required: true,
+                schema: { type: "integer" },
+              },
+            ],
+            responses: {
+              200: { description: "Story published successfully" },
+              404: { description: "Story not found" },
+            },
+          },
+        },
+        "/stories/admin/sections/{sectionId}": {
+          get: {
+            tags: ["Stories"],
+            summary: "published only",
+            security: [{ sessionCookie: [] }],
+            parameters: [
+              {
+                name: "sectionId",
+                in: "path",
+                required: true,
+                schema: { type: "integer" },
+              },
+            ],
+            responses: {
+              200: { description: "Stories retrieved successfully" },
+              403: { description: "Access denied" },
+            },
           },
         },
       },
