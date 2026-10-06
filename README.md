@@ -1,6 +1,6 @@
 # REKONEKT Backend
 
-Backend API for **REKONEKT**, a digital museum of Nigerian history. The API serves exhibitions, stories, events, people, places, artifacts, media, and sources, with visitor accounts and admin content management.
+Backend API for **REKO**, a digital museum of Nigerian history. The API serves exhibitions, stories, events, people, places, artifacts, media, and sources, with visitor accounts and admin content management.
 
 ## Tech stack
 

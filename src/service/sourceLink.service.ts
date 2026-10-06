@@ -6,24 +6,29 @@ import {
   updateSourceLinkQuery,
   deleteSourceLinkQuery,
 } from "src/model/sourceLink.queries";
+import type { SourceLink } from "../types/contentRelationships";
 
-export const createSourceLinkService = async (
-  sourceId: number,
-  sectionId: number | null,
-  eventId: number | null,
-  personId: number | null,
-  artifactId: number | null,
-  relationship: string | null,
-  displayOrder: number,
-) => {
-  const result = await pool.query(createSourceLinkQuery, [
-    sourceId,
-    sectionId,
-    eventId,
-    personId,
-    artifactId,
-    relationship,
-    displayOrder,
+export const createSourceLinkService = async (data: {
+  sourceId: number;
+  sectionId?: number | null;
+  eventId?: number | null;
+  personId?: number | null;
+  artifactId?: number | null;
+  storyId?: number | null;
+  placeId?: number | null;
+  relationship?: string | null;
+  displayOrder?: number;
+}) => {
+  const result = await pool.query<SourceLink>(createSourceLinkQuery, [
+    data.sourceId,
+    data.sectionId ?? null,
+    data.eventId ?? null,
+    data.personId ?? null,
+    data.artifactId ?? null,
+    data.storyId ?? null,
+    data.placeId ?? null,
+    data.relationship ?? null,
+    data.displayOrder ?? 0,
   ]);
 
   return result.rows[0];
@@ -36,7 +41,7 @@ export const getSourceLinks = async () => {
 };
 
 export const getSourceLinkById = async (id: number) => {
-  const result = await pool.query(getSourceLinkByIdQuery, [id]);
+  const result = await pool.query<SourceLink>(getSourceLinkByIdQuery, [id]);
 
   return result.rows[0];
 };
@@ -44,23 +49,38 @@ export const getSourceLinkById = async (id: number) => {
 export const updateSourceLinkService = async (
   id: number,
   data: {
-    sourceId: number;
-    sectionId: number | null;
-    eventId: number | null;
-    personId: number | null;
-    artifactId: number | null;
-    relationship: string | null;
-    displayOrder: number;
+    sourceId?: number;
+    sectionId?: number | null;
+    eventId?: number | null;
+    personId?: number | null;
+    artifactId?: number | null;
+    storyId?: number | null;
+    placeId?: number | null;
+    relationship?: string | null;
+    displayOrder?: number;
   },
 ) => {
-  const result = await pool.query(updateSourceLinkQuery, [
-    data.sourceId,
-    data.sectionId,
-    data.eventId,
-    data.personId,
-    data.artifactId,
-    data.relationship,
-    data.displayOrder,
+  const targetKeys = [
+    "sectionId",
+    "eventId",
+    "personId",
+    "artifactId",
+    "storyId",
+    "placeId",
+  ] as const;
+  const targetChanged = targetKeys.some((key) => data[key] !== undefined);
+
+  const result = await pool.query<SourceLink>(updateSourceLinkQuery, [
+    data.sourceId ?? null,
+    data.relationship ?? null,
+    data.displayOrder ?? null,
+    targetChanged,
+    data.sectionId ?? null,
+    data.eventId ?? null,
+    data.personId ?? null,
+    data.artifactId ?? null,
+    data.storyId ?? null,
+    data.placeId ?? null,
     id,
   ]);
 

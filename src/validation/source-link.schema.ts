@@ -1,50 +1,53 @@
 import { z } from "zod";
 
-export const createSourceLinkSchema = z.object({
-  sourceId: z
-    .number({
-      error: "Source ID is required",
-    })
-    .int("Source ID must be an integer")
-    .positive("Source ID must be positive"),
+const targetFields = {
+  sectionId: z.number().int().positive().nullable().optional(),
+  eventId: z.number().int().positive().nullable().optional(),
+  personId: z.number().int().positive().nullable().optional(),
+  artifactId: z.number().int().positive().nullable().optional(),
+  storyId: z.number().int().positive().nullable().optional(),
+  placeId: z.number().int().positive().nullable().optional(),
+};
 
-  sectionId: z
-    .number()
-    .int("Section ID must be an integer")
-    .positive("Section ID must be positive")
-    .optional(),
+const targetKeys = [
+  "sectionId",
+  "eventId",
+  "personId",
+  "artifactId",
+  "storyId",
+  "placeId",
+] as const;
 
-  eventId: z
-    .number()
-    .int("Event ID must be an integer")
-    .positive("Event ID must be positive")
-    .optional(),
+const targetCountIsValid = (
+  value: Partial<Record<(typeof targetKeys)[number], number | null>>,
+  context: z.RefinementCtx,
+  requireTarget: boolean,
+) => {
+  const specified = targetKeys.some((key) => value[key] !== undefined);
+  const targetCount = targetKeys.filter((key) => value[key] != null).length;
 
-  personId: z
-    .number()
-    .int("Person ID must be an integer")
-    .positive("Person ID must be positive")
-    .optional(),
+  if ((requireTarget || specified) && targetCount !== 1) {
+    context.addIssue({
+      code: "custom",
+      message: "Exactly one content target is required",
+    });
+  }
+};
 
-  artifactId: z
-    .number()
-    .int("Artifact ID must be an integer")
-    .positive("Artifact ID must be positive")
-    .optional(),
-
-  relationship: z
-    .string({
-      error: "Relationship is required",
-    })
-    .min(2, "Relationship must be at least 2 characters")
-    .max(255, "Relationship must not exceed 255 characters"),
-
-  displayOrder: z
-    .number()
-    .int("Display order must be an integer")
-    .min(0, "Display order cannot be negative")
-    .optional(),
+const sourceLinkSchema = z.object({
+  sourceId: z.number().int().positive(),
+  ...targetFields,
+  relationship: z.string().min(2).max(50),
+  displayOrder: z.number().int().min(0).optional(),
 });
 
-export const updateSourceLinkSchema =
-  createSourceLinkSchema.partial();
+export const createSourceLinkSchema = sourceLinkSchema.superRefine(
+  (value, context) => targetCountIsValid(value, context, true),
+);
+
+export const updateSourceLinkSchema = sourceLinkSchema
+  .partial()
+  .extend({
+    relationship: z.string().min(2).max(50).optional(),
+  })
+  .superRefine((value, context) => targetCountIsValid(value, context, false));

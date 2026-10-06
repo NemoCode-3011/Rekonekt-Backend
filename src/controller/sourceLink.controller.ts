@@ -23,25 +23,7 @@ export const createSourceLinkController = async (
       return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const {
-      sourceId,
-      sectionId,
-      eventId,
-      personId,
-      artifactId,
-      relationship,
-      displayOrder,
-    } = validation.data;
-
-    const sourceLink = await createSourceLinkService(
-      sourceId,
-      sectionId ?? null,
-      eventId ?? null,
-      personId ?? null,
-      artifactId ?? null,
-      relationship ?? null,
-      displayOrder ?? 0,
-    );
+    const sourceLink = await createSourceLinkService(validation.data);
 
     return sendResponse(
       res,
@@ -54,6 +36,10 @@ export const createSourceLinkController = async (
 
     if (error.code === "23503") {
       return sendResponse(res, 404, "Referenced resource not found");
+    }
+
+    if (error.code === "23514") {
+      return sendResponse(res, 400, "Exactly one content target is required");
     }
 
     return sendResponse(res, 500, "Internal server error");
@@ -116,7 +102,7 @@ export const updateSourceLinkController = async (
 
     const sourceLink = await updateSourceLinkService(
       Number(req.params.id),
-      validation.data as Parameters<typeof updateSourceLinkService>[1],
+      validation.data,
     );
 
     return sendResponse(
@@ -130,6 +116,10 @@ export const updateSourceLinkController = async (
 
     if (error.code === "23503") {
       return sendResponse(res, 404, "Referenced resource not found");
+    }
+
+    if (error.code === "23514") {
+      return sendResponse(res, 400, "Exactly one content target is required");
     }
 
     return sendResponse(res, 500, "Internal server error");

@@ -24,6 +24,8 @@ import noteRoutes from "src/routes/note.routes";
 import progressRoutes from "src/routes/progress.routes";
 import googleAuthRoutes from "src/routes/googleAuth.routes";
 import searchRoutes from "src/routes/search.routes";
+import contentRelationshipRoutes from "src/routes/contentRelationships.routes";
+import experienceRoutes from "src/routes/experience.routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
@@ -72,6 +74,8 @@ app.use("/notes", noteRoutes);
 app.use("/progress", progressRoutes);
 app.use("/auth/google", googleAuthRoutes);
 app.use("/search", searchRoutes);
+app.use("/experiences", experienceRoutes);
+app.use("/", contentRelationshipRoutes);
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

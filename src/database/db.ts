@@ -24,7 +24,6 @@ import {
   createProgressTable,
   alterUsersTableAddIsVerified,
   alterUsersTableAddGoogleId,
-  alterStoriesTableAddIsDiscovery,
   alterContentTablesAddStatus,
 } from "./queries";
 
@@ -91,8 +90,6 @@ export const createTables = async () => {
     console.log("user table altered");
     await client.query(alterUsersTableAddGoogleId);
     console.log("users table altered for google");
-    await client.query(alterStoriesTableAddIsDiscovery);
-    console.log("stories table altered for discovery");
         await client.query(alterContentTablesAddStatus);
     console.log("content tables altered for publishing");
   } catch (error) {

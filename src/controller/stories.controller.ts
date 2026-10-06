@@ -9,7 +9,6 @@ import {
   deleteStoryService,
   publishStoryService,
   getStoryBySlugService,
-  getDiscoveryStoryService,
   getAllStoriesBySectionService,
   getPublishedStoriesService,
 } from "../service/stories.service";
@@ -148,29 +147,6 @@ export const deleteStoryController = async (req: Request, res: Response) => {
     return sendResponse(res, 500, "Internal server error");
   }
 };
-export const getDiscoveryStoryController = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const result = await getDiscoveryStoryService();
-
-    return sendResponse(
-      res,
-      200,
-      "Discovery story retrieved successfully",
-      result,
-    );
-  } catch (error: any) {
-    if (error.message === "Discovery story not found") {
-      return sendResponse(res, 404, error.message);
-    }
-
-    console.log(error.message || error);
-    return sendResponse(res, 500, "Internal server error");
-  }
-};
-
 export const getStoryBySlugController = async (req: Request, res: Response) => {
   try {
     const result = await getStoryBySlugService(String(req.params.slug));

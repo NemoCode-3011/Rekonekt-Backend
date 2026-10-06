@@ -22,18 +22,9 @@ export const getStoriesBySectionQuery = `
   ORDER BY created_at ASC;
 `;
 
-export const getDiscoveryStoryQuery = `
-  SELECT id, title, slug, excerpt, cover_image_url, published_at
-  FROM stories
-  WHERE status = 'published'
-    AND is_discovery = TRUE
-  ORDER BY published_at DESC
-  LIMIT 1;
-`;
-
 export const getStoryBySlugQuery = `
   SELECT id, section_id, title, slug, excerpt, content,
-         cover_image_url, is_discovery, published_at
+         cover_image_url, published_at
   FROM stories
   WHERE slug = $1
     AND status = 'published';
@@ -67,9 +58,8 @@ export const updateStoryQuery = `
     excerpt = COALESCE($3, excerpt),
     content = COALESCE($4, content),
     cover_image_url = COALESCE($5, cover_image_url),
-    is_discovery = COALESCE($6, is_discovery),
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $7
+  WHERE id = $6
   RETURNING *;
 `;
 

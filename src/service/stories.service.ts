@@ -7,7 +7,6 @@ import {
   deleteStoryQuery,
   publishStoryQuery,
   getStoryBySlugQuery,
-  getDiscoveryStoryQuery,
   getAllStoriesBySectionQuery,
   getPublishedStoriesQuery,
 } from "../model/stories.queries";
@@ -74,7 +73,6 @@ export const updateStoryService = async (
     excerpt?: string;
     content?: string;
     coverImageUrl?: string;
-    isDiscovery?: boolean;
   },
 ) => {
   try {
@@ -84,7 +82,6 @@ export const updateStoryService = async (
       data.excerpt ?? null,
       data.content ?? null,
       data.coverImageUrl ?? null,
-      data.isDiscovery ?? null,
       id,
     ]);
     if (result.rows.length === 0) {
@@ -110,16 +107,6 @@ export const deleteStoryService = async (id: number) => {
 
   if (result.rows.length === 0) {
     throw new Error("Story not found");
-  }
-
-  return result.rows[0];
-};
-
-export const getDiscoveryStoryService = async () => {
-  const result = await pool.query(getDiscoveryStoryQuery);
-
-  if (result.rows.length === 0) {
-    throw new Error("Discovery story not found");
   }
 
   return result.rows[0];

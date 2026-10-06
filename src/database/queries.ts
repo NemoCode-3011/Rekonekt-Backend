@@ -230,15 +230,11 @@ UNIQUE(user_id, exhibition_id)
 `;
 export const alterUsersTableAddIsVerified = `
   ALTER TABLE users
-  ADD COLUMN is_verified BOOLEAN NOT NULL DEFAULT FALSE;
+  ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE;
 `;
 export const alterUsersTableAddGoogleId = `
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
-`;
-export const alterStoriesTableAddIsDiscovery = `
-  ALTER TABLE stories
-  ADD COLUMN IF NOT EXISTS is_discovery BOOLEAN NOT NULL DEFAULT FALSE;
 `;
 export const alterContentTablesAddStatus = `
 DO $$

@@ -81,6 +81,18 @@ const options = {
       ...contentAdminPaths("Places", "places"),
       ...contentAdminPaths("Stories", "stories"),
 
+      "/admin/admins": {
+        post: {
+          tags: ["Authentication"],
+          summary: "Create an admin",
+          security: [{ sessionCookie: [] }],
+          responses: {
+            201: { description: "Admin created successfully" },
+            403: { description: "Super admin access required" },
+          },
+        },
+      },
+
       "/auth/signup": {
         post: {
           tags: ["Authentication"],
@@ -332,49 +344,6 @@ const options = {
         },
       },
 
-      "/auth/admins": {
-        post: {
-          tags: ["Authentication"],
-          summary: "Create an admin",
-          security: [{ sessionCookie: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  required: ["name", "email", "password"],
-                  properties: {
-                    name: {
-                      type: "string",
-                      example: "Museum Admin",
-                    },
-                    email: {
-                      type: "string",
-                      format: "email",
-                      example: "admin@example.com",
-                    },
-                    password: {
-                      type: "string",
-                      format: "password",
-                      example: "password123",
-                    },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            201: {
-              description: "Admin created successfully",
-            },
-            403: {
-              description: "Super admin access required",
-            },
-          },
-        },
-      },
-
       "/exhibitions": {
         post: {
           tags: ["Exhibitions"],
@@ -411,6 +380,19 @@ const options = {
           responses: {
             200: { description: "Exhibition retrieved successfully" },
             404: { description: "Exhibition not found" },
+          },
+        },
+        "/experiences/{slug}": {
+          get: {
+            tags: ["Experiences"],
+            summary: "Get an exhibition experience with its ordered sections",
+            parameters: [
+              { name: "slug", in: "path", required: true, schema: { type: "string" } },
+            ],
+            responses: {
+              200: { description: "Experience retrieved successfully" },
+              404: { description: "Exhibition not found" },
+            },
           },
         },
       },
@@ -627,16 +609,6 @@ const options = {
           ],
           responses: {
             200: { description: "Story deleted successfully" },
-          },
-        },
-        "/stories/discovery": {
-          get: {
-            tags: ["Stories"],
-            summary: "Get the current discovery story",
-            responses: {
-              200: { description: "Discovery story retrieved successfully" },
-              404: { description: "Discovery story not found" },
-            },
           },
         },
         "/stories/{slug}": {
@@ -1424,6 +1396,89 @@ const options = {
           responses: {
             200: { description: "Source link deleted successfully" },
           },
+        },
+      },
+      "/source-links/content/{targetType}/{targetId}": {
+        get: {
+          tags: ["Source Links"],
+          summary: "Get sources associated with published content",
+          parameters: [
+            { name: "targetType", in: "path", required: true, schema: { type: "string", enum: ["section", "story", "event", "person", "place", "artifact"] } },
+            { name: "targetId", in: "path", required: true, schema: { type: "integer" } },
+          ],
+          responses: { 200: { description: "Content sources retrieved" } },
+        },
+      },
+      "/sections/{sectionId}/people": {
+        get: {
+          tags: ["Content Relationships"],
+          summary: "Get people featured in a published section",
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 200: { description: "Section people retrieved" } },
+        },
+        post: {
+          tags: ["Content Relationships"],
+          summary: "Feature a person in a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 201: { description: "Person linked to section" } },
+        },
+      },
+      "/sections/{sectionId}/people/{personId}": {
+        delete: {
+          tags: ["Content Relationships"],
+          summary: "Remove a person from a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: "sectionId", in: "path", required: true, schema: { type: "integer" } },
+            { name: "personId", in: "path", required: true, schema: { type: "integer" } },
+          ],
+          responses: { 200: { description: "Person unlinked from section" } },
+        },
+      },
+      "/admin/sections/{sectionId}/people": {
+        get: {
+          tags: ["Content Relationships"],
+          summary: "Get all people linked to a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 200: { description: "Section people retrieved" } },
+        },
+      },
+      "/sections/{sectionId}/places": {
+        get: {
+          tags: ["Content Relationships"],
+          summary: "Get places featured in a published section",
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 200: { description: "Section places retrieved" } },
+        },
+        post: {
+          tags: ["Content Relationships"],
+          summary: "Feature a place in a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 201: { description: "Place linked to section" } },
+        },
+      },
+      "/sections/{sectionId}/places/{placeId}": {
+        delete: {
+          tags: ["Content Relationships"],
+          summary: "Remove a place from a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            { name: "sectionId", in: "path", required: true, schema: { type: "integer" } },
+            { name: "placeId", in: "path", required: true, schema: { type: "integer" } },
+          ],
+          responses: { 200: { description: "Place unlinked from section" } },
+        },
+      },
+      "/admin/sections/{sectionId}/places": {
+        get: {
+          tags: ["Content Relationships"],
+          summary: "Get all places linked to a section",
+          security: [{ sessionCookie: [] }],
+          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { 200: { description: "Section places retrieved" } },
         },
       },
       "/bookmarks": {

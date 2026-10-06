@@ -37,7 +37,4 @@ export const createStorySchema = z.object({
   coverImageUrl: z.string().url("Invalid cover image URL").optional(),
 });
 
-export const updateStorySchema = createStorySchema
-  .omit({ sectionId: true })
-  .partial()
-  .extend({ isDiscovery: z.boolean().optional() });
+export const updateStorySchema = createStorySchema.omit({ sectionId: true }).partial();
