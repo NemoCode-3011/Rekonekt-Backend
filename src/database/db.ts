@@ -1,7 +1,7 @@
 // src/database/db.ts
 
 import dotenv from "dotenv";
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 
 import {
   createCulturalGroupsTable,
@@ -22,12 +22,17 @@ import {
   createBookmarksTable,
   createNotesTable,
   createProgressTable,
+  createSectionPeopleTable,
+  createSectionPlacesTable,
+  alterSourceLinksAddStoryAndPlace,
   alterUsersTableAddIsVerified,
   alterUsersTableAddGoogleId,
   alterContentTablesAddStatus,
 } from "./queries";
 
 dotenv.config();
+
+types.setTypeParser(types.builtins.DATE, (value) => value);
 
 export const pool = new Pool({
   user: process.env.DB_USER,
@@ -86,6 +91,12 @@ export const createTables = async () => {
     console.log("notes table created");
     await client.query(createProgressTable);
     console.log("progress table created");
+    await client.query(createSectionPeopleTable);
+    console.log("section_people table created");
+    await client.query(createSectionPlacesTable);
+    console.log("section_places table created");
+    await client.query(alterSourceLinksAddStoryAndPlace);
+    console.log("source_links table altered for stories and places");
     await client.query(alterUsersTableAddIsVerified);
     console.log("user table altered");
     await client.query(alterUsersTableAddGoogleId);

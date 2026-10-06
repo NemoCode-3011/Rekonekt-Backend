@@ -119,25 +119,29 @@ const sourceData = [
     key: "S2",
     title: "Telegram From the Embassy in Nigeria to the Department of State",
     author: "U.S. Department of State, Office of the Historian",
-    publication: "Foreign Relations of the United States, Document 379",
+    publication: "Foreign Relations of the United States, 1964-1968, Vol. XXIV",
     source_type: "Primary diplomatic record",
     publication_date: "1967-04-12",
     url: "https://history.state.gov/historicaldocuments/frus1964-68v24/d379",
     citation:
-      'U.S. Department of State, Office of the Historian, "Telegram From the Embassy in Nigeria to the Department of State," 12 April 1967, Foreign Relations of the United States, Document 379.',
-    perspective_note: "Records the Embassy's account of Ojukwu's position.",
+      'U.S. Department of State, Office of the Historian, "Telegram From the Embassy in Nigeria to the Department of State," 12 April 1967, Foreign Relations of the United States, 1964-1968, Vol. XXIV, Document 379.',
+    perspective_note:
+      "Primary diplomatic record; records the Embassy's account of a conversation with Ojukwu and reports his position.",
   },
   {
     key: "S3",
-    title: "Press Release on the Aburi Accord",
+    title:
+      "Official Record of the Minutes of the Meeting of Nigeria's Military Leaders held at Aburi",
     author: null,
     publication: "Dawodu.com",
-    source_type: "Reproduction of historical document",
-    publication_date: null,
-    url: "https://dawodu.com/articles/press-release-on-the-aburi-accord-1366",
-    citation: "Press Release on the Aburi Accord, Dawodu.com reproduction.",
+    source_type: "Reproduction of historical meeting minutes",
+    publication_date: "1967-01-04",
+    url: "https://www.dawodu.com/aburi2.htm",
+    legacy_url: "https://oblongmedia.net/category/politics/",
+    citation:
+      "\"Official Record of the Minutes of the Meeting of Nigeria's Military Leaders held at Aburi,\" Dawodu.com reproduction, 4-5 January 1967.",
     perspective_note:
-      "Reproduction; an official Government Printer scan should be sought.",
+      "Dawodu reproduction labelled as the official minutes. Verify against an official Government Printer record before treating this reproduction as an authoritative original.",
   },
   {
     key: "S4",
@@ -149,7 +153,7 @@ const sourceData = [
     url: "https://www.dawodu.com/decree8.htm",
     citation: "Decree No. 8 of 1967, Dawodu.com reproduction.",
     perspective_note:
-      "Reproduction; an official Gazette scan should be obtained.",
+      "Reproduction; compare with the Official Gazette record referenced by the University of Ibadan Repository.",
   },
   {
     key: "S5",
@@ -166,18 +170,19 @@ const sourceData = [
   },
   {
     key: "S6",
-    title: "Biafra Proclamation",
-    author: null,
-    publication: "Biafran.org",
-    source_type: "Reproduction of historical document",
-    publication_date: "1967-05-30",
-    url: "https://biafran.org/proclamation-republic-of-biafra/",
-    citation: "Biafra Proclamation, Biafran.org reproduction.",
+    title: "The Biafran Declaration of Independence",
+    author: "American Historical Association; David Trask",
+    publication: "Biafra, Nigeria, the West and the World",
+    source_type: "Educational resource reproducing a published text",
+    publication_date: null,
+    url: "https://www.historians.org/resource/biafran-declaration-of-independence/",
+    citation:
+      'American Historical Association, "The Biafran Declaration of Independence," reproducing C. Odumegwu Ojukwu, Biafra Selected Speeches and Random Thoughts of C. Odumegwu Ojukwu (New York: Harper & Row, 1969), 191–196.',
     perspective_note:
-      "Reproduction; an original Government Printer scan should be sought.",
+      "AHA educational resource developed in 2004, credited to David Trask. It reproduces text attributed to Ojukwu's 1969 published speeches, including the May 27 resolution and the declaration. Distinguish the reproduced text from the page's editorial framing; claims within the declaration are attributed to its authors.",
   },
   {
-    key: "S7",
+    key: "S6b",
     title: "Erklæring af 30. maj 1967 om Biafra",
     author: null,
     publication: "Danish Parliament",
@@ -189,6 +194,19 @@ const sourceData = [
       "Erklæring af 30. maj 1967 om Biafra, Danish Parliament document.",
     perspective_note:
       "Official parliamentary document containing a reproduction/version of the proclamation.",
+  },
+  {
+    key: "S7",
+    title:
+      "Decree No. 8 and Official Extraordinary Gazette No. 16, vol. 54",
+    author: null,
+    publication: "University of Ibadan Repository",
+    source_type: "Repository record referencing an official gazette",
+    publication_date: "1967-03-17",
+    url: "https://repository.ui.edu.ng/server/api/core/bitstreams/841e6c1c-48ac-4cda-ab64-bc01afdd25b5/content",
+    citation:
+      "University of Ibadan Repository record referencing Decree No. 8 and Official Extraordinary Gazette No. 16, vol. 54, 17 March 1967.",
+    perspective_note: "Use to pursue the official Gazette scan.",
   },
 ] as const;
 
@@ -240,7 +258,7 @@ const artifactData = [
     date_display: "March 17, 1967",
     place_key: null,
     section_key: "after-aburi",
-    source_keys: ["S4"],
+    source_keys: ["S4", "S7"],
   },
   {
     slug: "gowon-broadcast-may-27-1967",
@@ -262,7 +280,7 @@ const artifactData = [
     date_display: "May 30, 1967",
     place_key: null,
     section_key: "road-to-war",
-    source_keys: ["S6", "S7"],
+    source_keys: ["S6", "S6b"],
   },
 ] as const;
 
@@ -355,7 +373,7 @@ const eventData = [
     section_key: "after-aburi",
     people: ["yakubu-gowon", "chukwuemeka-odumegwu-ojukwu"],
     places: [],
-    source_keys: ["S1", "S2", "S4"],
+    source_keys: ["S1", "S2", "S4", "S7"],
   },
   {
     slug: "creation-of-twelve-states-announced",
@@ -377,7 +395,7 @@ const eventData = [
     section_key: "road-to-war",
     people: ["chukwuemeka-odumegwu-ojukwu"],
     places: [],
-    source_keys: ["S6", "S7"],
+    source_keys: ["S6", "S6b"],
   },
 ] as const;
 
@@ -547,10 +565,17 @@ async function getOrCreateSource(
   client: PoolClient,
   source: (typeof sourceData)[number],
 ): Promise<number> {
-  const existing = await client.query<IdRow>(
+  let existing = await client.query<IdRow>(
     "SELECT id FROM sources WHERE url = $1 ORDER BY id LIMIT 1",
     [source.url],
   );
+  if (!existing.rows[0] && "legacy_url" in source) {
+    existing = await client.query<IdRow>(
+      "SELECT id FROM sources WHERE url = $1 ORDER BY id LIMIT 1",
+      [source.legacy_url],
+    );
+  }
+
   if (!existing.rows[0]) {
     const created = await client.query<IdRow>(
       `INSERT INTO sources
@@ -574,15 +599,16 @@ async function getOrCreateSource(
 
   await client.query(
     `UPDATE sources SET title = $1, author = $2, publication = $3,
-       source_type = $4, publication_date = $5, citation = $6,
-       perspective_note = $7, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $8`,
+       source_type = $4, publication_date = $5, url = $6, citation = $7,
+       perspective_note = $8, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $9`,
     [
       source.title,
       source.author,
       source.publication,
       source.source_type,
       source.publication_date,
+      source.url,
       source.citation,
       source.perspective_note,
       existing.rows[0].id,
@@ -871,9 +897,9 @@ async function main(): Promise<void> {
 
     const sourceSectionLinks: Array<[string, string[]]> = [
       ["the-meeting", ["S3"]],
-      ["after-aburi", ["S1", "S2", "S4"]],
-      ["road-to-war", ["S5", "S6", "S7"]],
-      ["what-remains", ["S1", "S2", "S3", "S4", "S5", "S6", "S7"]],
+      ["after-aburi", ["S1", "S2", "S4", "S7"]],
+      ["road-to-war", ["S5", "S6", "S6b"]],
+      ["what-remains", ["S1", "S2", "S3", "S4", "S5", "S6", "S6b", "S7"]],
     ];
     for (const [sectionSlug, sourceKeys] of sourceSectionLinks) {
       const sectionId = sectionIds.get(sectionSlug);

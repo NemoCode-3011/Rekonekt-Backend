@@ -228,6 +228,27 @@ completed BOOLEAN DEFAULT FALSE,
 UNIQUE(user_id, exhibition_id)
 )
 `;
+export const createSectionPeopleTable = `
+CREATE TABLE IF NOT EXISTS section_people(
+section_id INT NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+person_id INT NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+display_order INT NOT NULL DEFAULT 0,
+PRIMARY KEY (section_id, person_id)
+)
+`;
+export const createSectionPlacesTable = `
+CREATE TABLE IF NOT EXISTS section_places(
+section_id INT NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+place_id INT NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+display_order INT NOT NULL DEFAULT 0,
+PRIMARY KEY (section_id, place_id)
+)
+`;
+export const alterSourceLinksAddStoryAndPlace = `
+ALTER TABLE source_links
+  ADD COLUMN IF NOT EXISTS story_id INT REFERENCES stories(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS place_id INT REFERENCES places(id) ON DELETE CASCADE;
+`;
 export const alterUsersTableAddIsVerified = `
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE;

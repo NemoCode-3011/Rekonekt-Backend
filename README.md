@@ -28,6 +28,7 @@ Backend API for **REKO**, a digital museum of Nigerian history. The API serves e
 
    ```dotenv
    PORT=3003
+   CLIENT_URL=http://localhost:5173
    DB_USER=postgres
    DB_HOST=localhost
    DB_PASSWORD=postgres
@@ -70,7 +71,7 @@ Backend API for **REKO**, a digital museum of Nigerian history. The API serves e
 
 ## Frontend connection
 
-CORS currently allows `http://localhost:5173`. If your frontend runs at a different origin, update the allowed origin in `src/server.ts`.
+CORS allows the origin configured by `CLIENT_URL`. It defaults to `http://localhost:5173` when `CLIENT_URL` is not set.
 
 ## Optional integrations
 
