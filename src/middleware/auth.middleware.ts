@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { redisClient } from "../config/redis";
 import { sendResponse } from "../utils/response";
-
-export const verifyUser = async (req: Request, res: Response, next: NextFunction,) => {
+import { SESSION_TTL_SECONDS } from "../utils/sessions";
+export const verifyUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const sessionId = req.cookies.sessionId;
 
@@ -17,6 +21,9 @@ export const verifyUser = async (req: Request, res: Response, next: NextFunction
     }
 
     const { userId } = JSON.parse(session);
+
+    // Every request restarts the 24-hour timer, so only inactivity of the user ends a session(omo hope it wokrs).
+    await redisClient.expire(`session:${sessionId}`, SESSION_TTL_SECONDS);
 
     req.userId = userId;
 

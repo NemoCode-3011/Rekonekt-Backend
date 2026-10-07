@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import { authenticateWithGoogle } from "src/service/googleAuth.service";
 import { googleAuthSchema } from "src/validation/auth.schema";
+import { sessionCookieOptions } from "../utils/cookies";
 
 export const googleAuthController = async (req: Request, res: Response) => {
   try {
@@ -15,12 +16,7 @@ export const googleAuthController = async (req: Request, res: Response) => {
 
     const result = await authenticateWithGoogle(credential);
 
-    res.cookie("sessionId", result.sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("sessionId", result.sessionId, sessionCookieOptions);
 
     return sendResponse(
       res,

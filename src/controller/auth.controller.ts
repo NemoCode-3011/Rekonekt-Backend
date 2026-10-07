@@ -8,17 +8,24 @@ import {
   resetPasswordService,
   signUpService,
   verifyOtpService,
+  updateProfileService,
+  changePasswordService,
 } from "../service/auth.service";
 import { sendResponse } from "../utils/response";
 import { signInService } from "src/service/auth.service";
-import { deleteExhibitionService } from "src/service/exhibitions.service";
 import {
   resendOtpSchema,
   resetPasswordSchema,
   signupSchema,
   verifyOtpSchema,
+  updateProfileSchema,
+  changePasswordSchema,
 } from "src/validation/auth.schema";
 import { signInSchema } from "src/validation/auth.schema";
+import {
+  sessionCookieOptions,
+  clearSessionCookieOptions,
+} from "../utils/cookies";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
@@ -81,13 +88,7 @@ export const signInController = async (req: Request, res: Response) => {
       email,
       password,
     });
-
-    res.cookie("sessionId", results.sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("sessionId", results.sessionId, sessionCookieOptions);
 
     return sendResponse(res, 200, "Login successful", {
       id: results.id,
@@ -142,11 +143,7 @@ export const logoutController = async (req: Request, res: Response) => {
 
     await logoutService(sessionId);
 
-    res.clearCookie("sessionId", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+    res.clearCookie("sessionId", clearSessionCookieOptions);
 
     return sendResponse(res, 200, "Logout successful");
   } catch (error: any) {
@@ -246,5 +243,68 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     return sendResponse(res, 200, "Password reset successfully", result);
   } catch (error: any) {
     return sendResponse(res, 400, error.message || "Failed to reset password");
+  }
+};
+export const updateProfileController = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return sendResponse(res, 401, "Authentication required");
+    }
+
+    const validation = updateProfileSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
+    const user = await updateProfileService(req.userId, validation.data);
+
+    return sendResponse(res, 200, "Profile updated successfully", user);
+  } catch (error: any) {
+    if (error.message === "User not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    if (error.message === "Cultural group not found") {
+      return sendResponse(res, 400, error.message);
+    }
+
+    console.log(error.message || error);
+
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const changePasswordController = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return sendResponse(res, 401, "Authentication required");
+    }
+
+    const validation = changePasswordSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
+    await changePasswordService(
+      req.userId,
+      validation.data.currentPassword,
+      validation.data.newPassword,
+    );
+
+    return sendResponse(res, 200, "Password changed successfully");
+  } catch (error: any) {
+    if (error.message === "Current password is incorrect") {
+      return sendResponse(res, 400, error.message);
+    }
+
+    if (error.message === "User not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+
+    return sendResponse(res, 500, "Internal server error");
   }
 };

@@ -26,6 +26,7 @@ import googleAuthRoutes from "src/routes/googleAuth.routes";
 import searchRoutes from "src/routes/search.routes";
 import contentRelationshipRoutes from "src/routes/contentRelationships.routes";
 import experienceRoutes from "src/routes/experience.routes";
+import culturalGroupRoutes from "../src/routes/culturalGroups.routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
@@ -33,6 +34,8 @@ import cors from "cors";
 dotenv.config();
 
 const app: Application = express();
+app.set("trust proxy", 1);
+
 app.use(express.json());
 
 app.use(
@@ -76,6 +79,7 @@ app.use("/auth/google", googleAuthRoutes);
 app.use("/search", searchRoutes);
 app.use("/experiences", experienceRoutes);
 app.use("/", contentRelationshipRoutes);
+app.use("/cultural-groups", culturalGroupRoutes);
 
 app.listen(port, async () => {
   console.log(`server is running on port: ${port}`);

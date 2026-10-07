@@ -9,6 +9,9 @@ import {
   getUserById,
   updateUserPasswordQuery,
   updateUserVerifiedQuery,
+  updateUserProfileQuery,
+  getUserPasswordByIdQuery,
+  updateUserPasswordByIdQuery,
 } from "../model/auth.queries";
 import { sendOtpEmail } from "../utils/email"; // change to where your email function lives
 import { otpGenerator } from "@utils/otpGenerator";
@@ -195,6 +198,7 @@ export const resendOtpService = async (email: string) => {
     email: user.email,
   };
 };
+
 export const forgotPasswordService = async (email: string) => {
   const result = await pool.query(getUserByEmail, [email]);
 
@@ -242,4 +246,60 @@ export const resetPasswordService = async (
   await deleteUserSessions(result.rows[0].id);
 
   return result.rows[0];
+};
+
+
+export const updateProfileService = async (
+  userId: number,
+  data: {
+    name: string;
+    preferredLanguage: string;
+    culturalGroupId: number | null;
+  },
+) => {
+  try {
+    const result = await pool.query(updateUserProfileQuery, [
+      data.name,
+      data.preferredLanguage,
+      data.culturalGroupId,
+      userId,
+    ]);
+
+    if (!result.rows[0]) {
+      throw new Error("User not found");
+    }
+
+    return result.rows[0];
+  } catch (error: any) {
+    if (error.code === "23503") {
+      throw new Error("Cultural group not found");
+    }
+
+    throw error;
+  }
+};
+
+export const changePasswordService = async (
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const result = await pool.query(getUserPasswordByIdQuery, [userId]);
+
+  if (!result.rows[0]) {
+    throw new Error("User not found");
+  }
+
+  const matches = await bcrypt.compare(
+    currentPassword,
+    result.rows[0].password,
+  );
+
+  if (!matches) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await pool.query(updateUserPasswordByIdQuery, [hashedPassword, userId]);
 };

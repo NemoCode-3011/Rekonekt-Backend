@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAdminExhibitionsController,
   getPublishedExhibitionsController,
   getExhibitionBySlugController,
   publishExhibitionController,
@@ -13,6 +14,7 @@ import { requireRole } from "@middleware/authorize";
 const router = Router();
 
 router.get("/", getPublishedExhibitionsController);
+router.get("/admin",verifyUser,requireRole("admin", "super admin"),getAdminExhibitionsController,);
 router.get("/:slug", getExhibitionBySlugController);
 router.post("/", verifyUser, requireRole("admin", "super admin"),createExhibitionController);
 router.patch("/:id/publish",verifyUser,requireRole("admin", "super admin"), publishExhibitionController);

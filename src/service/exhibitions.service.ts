@@ -1,6 +1,7 @@
 import { pool } from "src/database/db";
 import {
   getPublishedExhibitionsQuery,
+  getAdminExhibitionsQuery,
   getExhibitionBySlugQuery,
   createExhibitionQuery,
   publishExhibitionQuery,
@@ -12,6 +13,23 @@ export const getPublishedExhibitionsService = async () => {
   const result = await pool.query(getPublishedExhibitionsQuery);
 
   return result.rows;
+};
+
+export const getAdminExhibitionsService = async () => {
+  const result = await pool.query(getAdminExhibitionsQuery);
+  const exhibitions = result.rows;
+
+  return {
+    totalCount: exhibitions.length,
+    publishedCount: exhibitions.filter(
+      (exhibition) => exhibition.status === "published",
+    ).length,
+    draftCount: exhibitions.filter(
+      (exhibition) => exhibition.status === "draft",
+    ).length,
+    exhibitions,
+    recentlyUpdated: exhibitions.slice(0, 5),
+  };
 };
 
 export const getExhibitionBySlugService = async (slug: string) => {

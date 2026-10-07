@@ -14,6 +14,24 @@ export const getPublishedExhibitionsQuery = `
   ORDER BY published_at DESC;
 `;
 
+export const getAdminExhibitionsQuery = `
+  SELECT
+    id,
+    title,
+    slug,
+    subtitle,
+    description,
+    start_date,
+    end_date,
+    cover_image_url,
+    status,
+    published_at,
+    created_at,
+    updated_at
+  FROM exhibitions
+  ORDER BY updated_at DESC, id DESC;
+`;
+
 export const getExhibitionBySlugQuery = `
   SELECT
     id,

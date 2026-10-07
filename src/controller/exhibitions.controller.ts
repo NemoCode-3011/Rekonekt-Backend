@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  getAdminExhibitionsService,
   getPublishedExhibitionsService,
   getExhibitionBySlugService,
   createExhibitionService,
@@ -22,6 +23,26 @@ export const getPublishedExhibitionsController = async (
       res,
       200,
       "Exhibitions retrieved successfully",
+      results,
+    );
+  } catch (error: any) {
+    console.log(error.message || error);
+
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminExhibitionsController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const results = await getAdminExhibitionsService();
+
+    return sendResponse(
+      res,
+      200,
+      "Admin exhibitions retrieved successfully",
       results,
     );
   } catch (error: any) {

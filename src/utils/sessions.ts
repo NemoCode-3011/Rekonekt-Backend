@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { redisClient } from "src/config/redis";
 
+
+export const SESSION_TTL_SECONDS = 60 * 60 * 24;
 export const createSession = async (userId: number) => {
   const sessionId = crypto.randomUUID();
 
@@ -8,7 +10,7 @@ export const createSession = async (userId: number) => {
     `session:${sessionId}`,
     JSON.stringify({ userId }),
     {
-      EX: 60 * 60 * 24 * 7,
+     EX: SESSION_TTL_SECONDS,
     }
   );
 

@@ -143,3 +143,28 @@ export const updateUserPasswordQuery = `
   WHERE email = $2
   RETURNING id, name, email, role;
 `;
+export const updateUserProfileQuery = `
+  UPDATE users
+  SET
+    name = $1,
+    preferred_language = $2,
+    cultural_group_id = $3,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE id = $4
+  RETURNING id, name, email, role, cultural_group_id, preferred_language, is_verified;
+`;
+
+export const getUserPasswordByIdQuery = `
+  SELECT password
+  FROM users
+  WHERE id = $1;
+`;
+
+export const updateUserPasswordByIdQuery = `
+  UPDATE users
+  SET
+    password = $1,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE id = $2
+  RETURNING id;
+`;
