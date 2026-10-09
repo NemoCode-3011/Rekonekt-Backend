@@ -9,7 +9,8 @@ import {
   signUpController,
   verifyOtpController,
   updateProfileController,
-  changePasswordController
+  changePasswordController,
+  setupAdminPasswordController,
 } from "../controller/auth.controller";
 import { verifyUser } from "@middleware/auth.middleware";
 import { authLimiter } from "../middleware/rateLimit.middleware";
@@ -19,6 +20,7 @@ const router = Router();
 router.post("/signup", authLimiter, signUpController);
 router.post("/verify-otp", authLimiter, verifyOtpController);
 router.post("/signin", authLimiter, signInController);
+router.post("/admin/setup-password", authLimiter, setupAdminPasswordController);
 router.get("/me", verifyUser, getCurrentUserController);
 router.patch("/me", verifyUser, updateProfileController);
 router.post("/change-password", verifyUser, authLimiter, changePasswordController);

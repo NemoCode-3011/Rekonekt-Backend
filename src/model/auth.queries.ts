@@ -168,3 +168,26 @@ export const updateUserPasswordByIdQuery = `
   WHERE id = $2
   RETURNING id;
 `;
+export const setupAdminPasswordQuery = `
+  UPDATE users
+  SET
+    password = $1,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE id = $2
+    AND role = 'admin'
+  RETURNING id, name, email, role;
+`;
+export const getAdminsQuery = `
+  SELECT id, name, email, role, created_at
+  FROM users
+  WHERE role IN ('admin', 'super admin')
+  ORDER BY (role = 'super admin') DESC, created_at ASC;
+`;
+
+// Only plain admins can be revoked, so a super admin is never touched.
+export const revokeAdminQuery = `
+  UPDATE users
+  SET role = 'visitor', updated_at = CURRENT_TIMESTAMP
+  WHERE id = $1 AND role = 'admin'
+  RETURNING id, name, email, role;
+`;

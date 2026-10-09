@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { randomInt } from "crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { pool } from "../database/db";
 import { redisClient } from "../config/redis";
 import {
@@ -12,8 +12,11 @@ import {
   updateUserProfileQuery,
   getUserPasswordByIdQuery,
   updateUserPasswordByIdQuery,
+  getAdminsQuery,
+  revokeAdminQuery,
+  setupAdminPasswordQuery,
 } from "../model/auth.queries";
-import { sendOtpEmail } from "../utils/email"; // change to where your email function lives
+import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
 import { otpGenerator } from "@utils/otpGenerator";
 import { createSession } from "@utils/sessions";
 import { getUserForResendOtpQuery } from "../model/auth.queries";
@@ -142,29 +145,62 @@ export const logoutService = async (sessionId: string) => {
 export const createAdminService = async (data: {
   name: string;
   email: string;
-  password: string;
   preferredLanguage?: string;
 }) => {
   const client = await pool.connect();
+  let setupTokenKey: string | undefined;
+  let transactionStarted = false;
 
   try {
-    const emailExists = await client.query(getUserByEmail, [data.email]);
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    const email = data.email.trim().toLowerCase();
+    const emailExists = await client.query(getUserByEmail, [email]);
 
     if (emailExists.rows.length > 0) {
       throw new Error("Email already exists");
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const initialPassword = randomBytes(32).toString("hex");
+    const hashedPassword = await bcrypt.hash(initialPassword, 10);
 
     const result = await client.query(createAdminQuery, [
-      data.name,
-      data.email,
+      data.name.trim(),
+      email,
       hashedPassword,
       data.preferredLanguage ?? "en",
     ]);
 
+    const setupToken = randomBytes(32).toString("base64url");
+    const tokenDigest = createHash("sha256").update(setupToken).digest("hex");
+    setupTokenKey = `admin-setup:${tokenDigest}`;
+    await redisClient.set(setupTokenKey, String(result.rows[0].id), {
+      EX: 60 * 60,
+    });
+
+    const clientUrl = (process.env.CLIENT_URL ?? "http://localhost:5173").replace(
+      /\/+$/,
+      "",
+    );
+    await sendAdminSetupEmail(
+      result.rows[0].name,
+      result.rows[0].email,
+      `${clientUrl}/admin/setup-password?token=${encodeURIComponent(setupToken)}`,
+    );
+    await client.query("COMMIT");
+    transactionStarted = false;
+
     return result.rows[0];
   } catch (error: any) {
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
+
+    if (setupTokenKey) {
+      await redisClient.del(setupTokenKey);
+    }
+
     if (error?.code === "23505") {
       throw new Error("Email already exists");
     }
@@ -173,6 +209,30 @@ export const createAdminService = async (data: {
   } finally {
     client.release();
   }
+};
+
+export const setupAdminPasswordService = async (
+  token: string,
+  password: string,
+) => {
+  const tokenDigest = createHash("sha256").update(token).digest("hex");
+  const userId = await redisClient.getDel(`admin-setup:${tokenDigest}`);
+
+  if (!userId) {
+    throw new Error("Invalid or expired setup link");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const result = await pool.query(setupAdminPasswordQuery, [
+    hashedPassword,
+    Number(userId),
+  ]);
+
+  if (!result.rows[0]) {
+    throw new Error("Invalid or expired setup link");
+  }
+
+  return result.rows[0];
 };
 
 export const resendOtpService = async (email: string) => {
@@ -302,4 +362,23 @@ export const changePasswordService = async (
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   await pool.query(updateUserPasswordByIdQuery, [hashedPassword, userId]);
+};
+
+export const getAdminsService = async () => {
+  const result = await pool.query(getAdminsQuery);
+  return result.rows;
+};
+
+export const revokeAdminService = async (id: number, requesterId: number) => {
+  if (id === requesterId) {
+    throw new Error("You can't remove your own access");
+  }
+
+  const result = await pool.query(revokeAdminQuery, [id]);
+
+  if (!result.rows[0]) {
+    throw new Error("Admin not found");
+  }
+
+  return result.rows[0];
 };

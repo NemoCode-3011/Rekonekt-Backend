@@ -17,7 +17,9 @@ const contentAdminPaths = (tag: string, base: string) => ({
       tags: [tag],
       summary: `Get one of ${base} by ID, any status (admin)`,
       security: [{ sessionCookie: [] }],
-      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      parameters: [
+        { name: "id", in: "path", required: true, schema: { type: "integer" } },
+      ],
       responses: {
         200: { description: "Retrieved successfully" },
         404: { description: "Not found" },
@@ -29,7 +31,9 @@ const contentAdminPaths = (tag: string, base: string) => ({
       tags: [tag],
       summary: "Publish",
       security: [{ sessionCookie: [] }],
-      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      parameters: [
+        { name: "id", in: "path", required: true, schema: { type: "integer" } },
+      ],
       responses: {
         200: { description: "Published successfully" },
         404: { description: "Not found" },
@@ -41,7 +45,9 @@ const contentAdminPaths = (tag: string, base: string) => ({
       tags: [tag],
       summary: "Unpublish (back to draft)",
       security: [{ sessionCookie: [] }],
-      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      parameters: [
+        { name: "id", in: "path", required: true, schema: { type: "integer" } },
+      ],
       responses: {
         200: { description: "Unpublished successfully" },
         404: { description: "Not found" },
@@ -84,11 +90,61 @@ const options = {
       "/admin/admins": {
         post: {
           tags: ["Authentication"],
-          summary: "Create an admin",
+          summary: "Create an admin and email a one-time password setup link",
           security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["name", "email"],
+                  properties: {
+                    name: { type: "string" },
+                    email: { type: "string", format: "email" },
+                    preferredLanguage: {
+                      type: "string",
+                      enum: ["en", "yo", "ig", "ha"],
+                    },
+                  },
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: "Admin created successfully" },
+            201: { description: "Admin created; password setup email sent" },
+            409: { description: "Email already exists" },
             403: { description: "Super admin access required" },
+          },
+        },
+      },
+
+      "/auth/admin/setup-password": {
+        post: {
+          tags: ["Authentication"],
+          summary: "Set the password for an invited admin",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["token", "password"],
+                  properties: {
+                    token: { type: "string" },
+                    password: {
+                      type: "string",
+                      format: "password",
+                      minLength: 8,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: "Admin password set successfully" },
+            400: { description: "Invalid or expired setup link" },
           },
         },
       },
@@ -357,7 +413,9 @@ const options = {
         },
         get: {
           tags: ["Exhibitions"],
-          summary: "Get all exhibitions",
+          summary: "Get public exhibition previews",
+          description:
+            "Returns published exhibition cover and introductory information. Full content requires a signed-in user.",
           responses: {
             200: { description: "Exhibitions retrieved successfully" },
           },
@@ -367,7 +425,9 @@ const options = {
       "/exhibitions/{slug}": {
         get: {
           tags: ["Exhibitions"],
-          summary: "Get an exhibition by slug",
+          summary: "Get a public exhibition preview by slug",
+          description:
+            "Returns the exhibition cover and introduction. Full content requires a signed-in user.",
           parameters: [
             {
               name: "slug",
@@ -382,17 +442,28 @@ const options = {
             404: { description: "Exhibition not found" },
           },
         },
-        "/experiences/{slug}": {
-          get: {
-            tags: ["Experiences"],
-            summary: "Get an exhibition experience with its ordered sections",
-            parameters: [
-              { name: "slug", in: "path", required: true, schema: { type: "string" } },
-            ],
-            responses: {
-              200: { description: "Experience retrieved successfully" },
-              404: { description: "Exhibition not found" },
+      },
+      "/experiences/{slug}": {
+        get: {
+          tags: ["Experiences"],
+          summary:
+            "Get an exhibition experience with its ordered sections (signed-in users only)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "slug",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
             },
+          ],
+          responses: {
+            200: { description: "Experience retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
+            404: { description: "Exhibition not found" },
           },
         },
       },
@@ -467,7 +538,32 @@ const options = {
       "/sections/exhibitions/{exhibitionId}": {
         get: {
           tags: ["Sections"],
-          summary: "Get sections for an exhibition",
+          summary: "Get sections for an exhibition (signed-in users only)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "exhibitionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            200: { description: "Sections retrieved successfully" },
+            401: {
+              description:
+                "Sign up or sign in to view the full exhibition",
+            },
+          },
+        },
+      },
+
+      "/sections/admin/exhibitions/{exhibitionId}": {
+        get: {
+          tags: ["Sections"],
+          summary:
+            "Get all sections of an exhibition, even if it is a draft (admin)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "exhibitionId",
@@ -482,20 +578,11 @@ const options = {
         },
       },
 
-      "/sections/admin/exhibitions/{exhibitionId}": {
-        get: {
-          tags: ["Sections"],
-          summary: "Get all sections of an exhibition, even if it is a draft (admin)",
-          security: [{ sessionCookie: [] }],
-          parameters: [{ name: "exhibitionId", in: "path", required: true, schema: { type: "integer" } }],
-          responses: { 200: { description: "Sections retrieved successfully" } },
-        },
-      },
-
       "/sections/{id}": {
         get: {
           tags: ["Sections"],
-          summary: "Get section by ID",
+          summary: "Get section by ID (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "id",
@@ -506,6 +593,10 @@ const options = {
           ],
           responses: {
             200: { description: "Section retrieved successfully" },
+            401: {
+              description:
+                "Sign up or sign in to view the full exhibition",
+            },
             404: { description: "Section not found" },
           },
         },
@@ -545,9 +636,14 @@ const options = {
       "/stories": {
         get: {
           tags: ["Stories"],
-          summary: "Get all published stories",
+          summary: "Get all published stories (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Stories retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         post: {
@@ -563,7 +659,8 @@ const options = {
       "/stories/sections/{sectionId}": {
         get: {
           tags: ["Stories"],
-          summary: "Get stories for a section",
+          summary: "Get stories for a section (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "sectionId",
@@ -574,6 +671,10 @@ const options = {
           ],
           responses: {
             200: { description: "Stories retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -611,50 +712,60 @@ const options = {
             200: { description: "Story deleted successfully" },
           },
         },
-        "/stories/{slug}": {
-          get: {
-            tags: ["Stories"],
-            summary: "Get a published story by slug",
-            parameters: [
-              {
-                name: "slug",
-                in: "path",
-                required: true,
-                schema: { type: "string" },
-              },
-            ],
-            responses: {
-              200: { description: "Story retrieved successfully" },
-              404: { description: "Story not found" },
+      },
+      "/stories/{slug}": {
+        get: {
+          tags: ["Stories"],
+          summary: "Get a published story by slug (signed-in users only)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "slug",
+              in: "path",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: { description: "Story retrieved successfully" },
+            404: { description: "Story not found" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
             },
           },
         },
-        "/stories/admin/sections/{sectionId}": {
-          get: {
-            tags: ["Stories"],
-            summary: "published only",
-            security: [{ sessionCookie: [] }],
-            parameters: [
-              {
-                name: "sectionId",
-                in: "path",
-                required: true,
-                schema: { type: "integer" },
-              },
-            ],
-            responses: {
-              200: { description: "Stories retrieved successfully" },
-              403: { description: "Access denied" },
+      },
+      "/stories/admin/sections/{sectionId}": {
+        get: {
+          tags: ["Stories"],
+          summary: "Get published stories by section (admin)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
             },
+          ],
+          responses: {
+            200: { description: "Stories retrieved successfully" },
+            403: { description: "Access denied" },
           },
         },
       },
       "/events": {
         get: {
           tags: ["Events"],
-          summary: "Get all published events",
+          summary: "Get all published events (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Events retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         post: {
@@ -670,7 +781,8 @@ const options = {
       "/events/sections/{sectionId}": {
         get: {
           tags: ["Events"],
-          summary: "Get events for a section",
+          summary: "Get events for a section (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "sectionId",
@@ -681,6 +793,10 @@ const options = {
           ],
           responses: {
             200: { description: "Events retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -688,7 +804,8 @@ const options = {
       "/events/{id}": {
         get: {
           tags: ["Events"],
-          summary: "Get event by ID",
+          summary: "Get event by ID (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "id",
@@ -699,6 +816,10 @@ const options = {
           ],
           responses: {
             200: { description: "Event retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         patch: {
@@ -745,9 +866,14 @@ const options = {
         },
         get: {
           tags: ["People"],
-          summary: "Get all people",
+          summary: "Get all people (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "People retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -789,7 +915,8 @@ const options = {
       "/people/{slug}": {
         get: {
           tags: ["People"],
-          summary: "Get a published person by slug",
+          summary: "Get a published person by slug (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "slug",
@@ -801,6 +928,10 @@ const options = {
           responses: {
             200: { description: "Person retrieved successfully" },
             404: { description: "Person not found" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -815,9 +946,14 @@ const options = {
         },
         get: {
           tags: ["Places"],
-          summary: "Get all places",
+          summary: "Get all places (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Places retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -825,7 +961,8 @@ const options = {
       "/places/{id}": {
         get: {
           tags: ["Places"],
-          summary: "Get place by ID",
+          summary: "Get place by ID (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "id",
@@ -836,6 +973,10 @@ const options = {
           ],
           responses: {
             200: { description: "Place retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         patch: {
@@ -891,7 +1032,8 @@ const options = {
         },
         get: {
           tags: ["Event Relationships"],
-          summary: "Get people linked to an event",
+          summary: "Get people linked to an event (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "eventId",
@@ -902,6 +1044,10 @@ const options = {
           ],
           responses: {
             200: { description: "People retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -950,7 +1096,8 @@ const options = {
         },
         get: {
           tags: ["Event Relationships"],
-          summary: "Get places linked to an event",
+          summary: "Get places linked to an event (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "eventId",
@@ -961,6 +1108,10 @@ const options = {
           ],
           responses: {
             200: { description: "Places retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1000,9 +1151,14 @@ const options = {
         },
         get: {
           tags: ["Artifacts"],
-          summary: "Get all artifacts",
+          summary: "Get all artifacts (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Artifacts retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1010,7 +1166,8 @@ const options = {
       "/artifacts/sections/{sectionId}": {
         get: {
           tags: ["Artifacts"],
-          summary: "Get artifacts for a section",
+          summary: "Get artifacts for a section (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "sectionId",
@@ -1021,6 +1178,10 @@ const options = {
           ],
           responses: {
             200: { description: "Artifacts retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1062,7 +1223,8 @@ const options = {
       "/artifacts/{slug}": {
         get: {
           tags: ["Artifacts"],
-          summary: "Get a published artifact by slug",
+          summary: "Get a published artifact by slug (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "slug",
@@ -1074,13 +1236,18 @@ const options = {
           responses: {
             200: { description: "Artifact retrieved successfully" },
             404: { description: "Artifact not found" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
       "/search": {
         get: {
           tags: ["Search"],
-          summary: "Search published content",
+          summary: "Search published content (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "q",
@@ -1092,6 +1259,10 @@ const options = {
           responses: {
             200: { description: "Search results retrieved" },
             400: { description: "Query too short" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1106,9 +1277,14 @@ const options = {
         },
         get: {
           tags: ["Media"],
-          summary: "Get all media",
+          summary: "Get all media (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1151,7 +1327,8 @@ const options = {
       "/media/{id}": {
         get: {
           tags: ["Media"],
-          summary: "Get media by ID",
+          summary: "Get media by ID (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "id",
@@ -1162,6 +1339,10 @@ const options = {
           ],
           responses: {
             200: { description: "Media retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         patch: {
@@ -1208,9 +1389,14 @@ const options = {
         },
         get: {
           tags: ["Media Attachments"],
-          summary: "Get all media attachments",
+          summary: "Get all media attachments (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media attachments retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
       },
@@ -1218,7 +1404,8 @@ const options = {
       "/media-attachment/{id}": {
         get: {
           tags: ["Media Attachments"],
-          summary: "Get media attachment by ID",
+          summary: "Get media attachment by ID (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
             {
               name: "id",
@@ -1229,6 +1416,10 @@ const options = {
           ],
           responses: {
             200: { description: "Media attachment retrieved successfully" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
           },
         },
         patch: {
@@ -1401,26 +1592,76 @@ const options = {
       "/source-links/content/{targetType}/{targetId}": {
         get: {
           tags: ["Source Links"],
-          summary: "Get sources associated with published content",
+          summary:
+            "Get sources for content (signed-in users only)",
+          security: [{ sessionCookie: [] }],
           parameters: [
-            { name: "targetType", in: "path", required: true, schema: { type: "string", enum: ["section", "story", "event", "person", "place", "artifact"] } },
-            { name: "targetId", in: "path", required: true, schema: { type: "integer" } },
+            {
+              name: "targetType",
+              in: "path",
+              required: true,
+              schema: {
+                type: "string",
+                enum: [
+                  "section",
+                  "story",
+                  "event",
+                  "person",
+                  "place",
+                  "artifact",
+                ],
+              },
+            },
+            {
+              name: "targetId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
           ],
-          responses: { 200: { description: "Content sources retrieved" } },
+          responses: {
+            200: { description: "Content sources retrieved" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
+          },
         },
       },
       "/sections/{sectionId}/people": {
         get: {
           tags: ["Content Relationships"],
-          summary: "Get people featured in a published section",
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
-          responses: { 200: { description: "Section people retrieved" } },
+          summary:
+            "Get people featured in a section (signed-in users only)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            200: { description: "Section people retrieved" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
+          },
         },
         post: {
           tags: ["Content Relationships"],
           summary: "Feature a person in a section",
           security: [{ sessionCookie: [] }],
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
           responses: { 201: { description: "Person linked to section" } },
         },
       },
@@ -1430,8 +1671,18 @@ const options = {
           summary: "Remove a person from a section",
           security: [{ sessionCookie: [] }],
           parameters: [
-            { name: "sectionId", in: "path", required: true, schema: { type: "integer" } },
-            { name: "personId", in: "path", required: true, schema: { type: "integer" } },
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+            {
+              name: "personId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
           ],
           responses: { 200: { description: "Person unlinked from section" } },
         },
@@ -1441,22 +1692,51 @@ const options = {
           tags: ["Content Relationships"],
           summary: "Get all people linked to a section",
           security: [{ sessionCookie: [] }],
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
           responses: { 200: { description: "Section people retrieved" } },
         },
       },
       "/sections/{sectionId}/places": {
         get: {
           tags: ["Content Relationships"],
-          summary: "Get places featured in a published section",
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
-          responses: { 200: { description: "Section places retrieved" } },
+          summary:
+            "Get places featured in a section (signed-in users only)",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
+          responses: {
+            200: { description: "Section places retrieved" },
+            401: {
+              description:
+                "Signup required; data.code is SIGNUP_REQUIRED",
+            },
+          },
         },
         post: {
           tags: ["Content Relationships"],
           summary: "Feature a place in a section",
           security: [{ sessionCookie: [] }],
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
           responses: { 201: { description: "Place linked to section" } },
         },
       },
@@ -1466,8 +1746,18 @@ const options = {
           summary: "Remove a place from a section",
           security: [{ sessionCookie: [] }],
           parameters: [
-            { name: "sectionId", in: "path", required: true, schema: { type: "integer" } },
-            { name: "placeId", in: "path", required: true, schema: { type: "integer" } },
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+            {
+              name: "placeId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
           ],
           responses: { 200: { description: "Place unlinked from section" } },
         },
@@ -1477,7 +1767,14 @@ const options = {
           tags: ["Content Relationships"],
           summary: "Get all places linked to a section",
           security: [{ sessionCookie: [] }],
-          parameters: [{ name: "sectionId", in: "path", required: true, schema: { type: "integer" } }],
+          parameters: [
+            {
+              name: "sectionId",
+              in: "path",
+              required: true,
+              schema: { type: "integer" },
+            },
+          ],
           responses: { 200: { description: "Section places retrieved" } },
         },
       },

@@ -7,16 +7,19 @@ import {
   updateMediaAttachmentController,
   deleteMediaAttachmentController,
 } from "src/controller/mediaAttachment.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+import {
+  requireExhibitionSignup,
+  verifyUser,
+} from "src/middleware/auth.middleware";
 import { requireSuperAdmin } from "src/middleware/role.middleware";
 
 const router = Router();
 
 router.post("/",verifyUser,requireRole("admin", "super admin"),createMediaAttachmentController,);
 
-router.get("/", getMediaAttachmentsController);
+router.get("/", requireExhibitionSignup, getMediaAttachmentsController);
 
-router.get("/:id", getMediaAttachmentByIdController);
+router.get("/:id", requireExhibitionSignup, getMediaAttachmentByIdController);
 
 router.patch( "/:id", verifyUser, requireRole("admin", "super admin"), updateMediaAttachmentController,);
 

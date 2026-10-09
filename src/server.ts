@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import { Application, Request, Response } from "express";
-import { isDBConnected } from "../src/database/db";
+import { isDBConnected} from "../src/database/db";
 import authRoutes from "../src/routes/auth.routes";
 import { connectRedis } from "@config/redis";
 import cookieParser from "cookie-parser";

@@ -61,3 +61,18 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
+
+export const createAdminSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(150, "Name must not exceed 150 characters"),
+  email: z.string().trim().email("Invalid email address"),
+  preferredLanguage: z.enum(["en", "yo", "ig", "ha"]).optional(),
+});
+
+export const setupAdminPasswordSchema = z.object({
+  token: z.string().min(32, "Invalid or expired setup link"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});

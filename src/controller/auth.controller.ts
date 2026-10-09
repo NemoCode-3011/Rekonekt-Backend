@@ -10,6 +10,9 @@ import {
   verifyOtpService,
   updateProfileService,
   changePasswordService,
+  getAdminsService,
+  revokeAdminService,
+  setupAdminPasswordService,
 } from "../service/auth.service";
 import { sendResponse } from "../utils/response";
 import { signInService } from "src/service/auth.service";
@@ -20,6 +23,8 @@ import {
   verifyOtpSchema,
   updateProfileSchema,
   changePasswordSchema,
+  createAdminSchema,
+  setupAdminPasswordSchema,
 } from "src/validation/auth.schema";
 import { signInSchema } from "src/validation/auth.schema";
 import {
@@ -154,32 +159,20 @@ export const logoutController = async (req: Request, res: Response) => {
 };
 
 export const createAdminController = async (req: Request, res: Response) => {
-  const { name, email, password, preferredLanguage } = req.body;
   try {
-    if (!name) {
-      return sendResponse(res, 400, "Name is required");
+    const validation = createAdminSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    if (!email || !email.includes("@")) {
-      return sendResponse(res, 400, "Valid email is required");
-    }
+    const results = await createAdminService(validation.data);
 
-    if (!password || password.length < 8) {
-      return sendResponse(
-        res,
-        400,
-        "Password must not be less than 8 characters",
-      );
-    }
-
-    const results = await createAdminService({
-      name,
-      email,
-      password,
-      preferredLanguage,
-    });
-
-    return sendResponse(res, 201, "Admin created successfully", results);
+    return sendResponse(
+      res,
+      201,
+      "Admin created and password setup email sent",
+      results,
+    );
   } catch (error: any) {
     if (error.message === "Email already exists") {
       return sendResponse(res, 409, error.message);
@@ -187,6 +180,30 @@ export const createAdminController = async (req: Request, res: Response) => {
 
     console.log(error.message || error);
 
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const setupAdminPasswordController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const validation = setupAdminPasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
+    const { token, password } = validation.data;
+    const admin = await setupAdminPasswordService(token, password);
+
+    return sendResponse(res, 200, "Admin password set successfully", admin);
+  } catch (error: any) {
+    if (error.message === "Invalid or expired setup link") {
+      return sendResponse(res, 400, error.message);
+    }
+
+    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -305,6 +322,42 @@ export const changePasswordController = async (req: Request, res: Response) => {
 
     console.log(error.message || error);
 
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminsController = async (_req: Request, res: Response) => {
+  try {
+    const admins = await getAdminsService();
+
+    return sendResponse(res, 200, "Admins retrieved successfully", admins);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const revokeAdminController = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid user ID");
+    }
+
+    const admin = await revokeAdminService(id, req.userId as number);
+
+    return sendResponse(res, 200, "Admin access removed", admin);
+  } catch (error: any) {
+    if (error.message === "Admin not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    if (error.message === "You can't remove your own access") {
+      return sendResponse(res, 400, error.message);
+    }
+
+    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };

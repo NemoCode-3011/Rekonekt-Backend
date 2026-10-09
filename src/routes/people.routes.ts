@@ -6,7 +6,10 @@ import {
   updatePersonController,
   deletePersonController,
 } from "../controller/people.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+import {
+  requireExhibitionSignup,
+  verifyUser,
+} from "src/middleware/auth.middleware";
 import { requireRole } from "@middleware/authorize";
 import { createAdminContentController } from "src/controller/adminContent.controller";
 
@@ -19,10 +22,10 @@ router.patch("/:id/unpublish", verifyUser, requireRole("admin", "super admin"), 
 
 
 router.post("/", verifyUser, requireRole("admin", "super admin"), createPersonController);
-router.get("/", getPeopleController);
+router.get("/", requireExhibitionSignup, getPeopleController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
-router.get("/:slug", getPersonBySlugController);
+router.get("/:slug", requireExhibitionSignup, getPersonBySlugController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updatePersonController);
 router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deletePersonController);
 
