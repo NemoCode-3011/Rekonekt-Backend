@@ -1,3 +1,5 @@
+import { publicAttachment } from "./visibility";
+
 export const createMediaAttachmentQuery = `
   INSERT INTO media_attachments (
     media_id,
@@ -14,15 +16,17 @@ export const createMediaAttachmentQuery = `
 `;
 
 export const getMediaAttachmentsQuery = `
-  SELECT *
-  FROM media_attachments
-  ORDER BY display_order ASC, created_at ASC;
+  SELECT ma.*
+  FROM media_attachments ma
+  WHERE ${publicAttachment("ma")}
+  ORDER BY ma.display_order ASC, ma.created_at ASC;
 `;
 
 export const getMediaAttachmentByIdQuery = `
-  SELECT *
-  FROM media_attachments
-  WHERE id = $1;
+  SELECT ma.*
+  FROM media_attachments ma
+  WHERE ma.id = $1
+    AND ${publicAttachment("ma")};
 `;
 
 export const updateMediaAttachmentQuery = `

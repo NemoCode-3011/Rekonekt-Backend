@@ -1,14 +1,11 @@
 export const createProgressQuery = `
-  INSERT INTO progress (
-    user_id,
-    exhibition_id,
-    section_id,
-    completed
-  )
-  VALUES ($1, $2, $3, $4)
+  INSERT INTO progress (user_id, exhibition_id, section_id, completed)
+  SELECT $1::int, e.id, $3::int, $4::boolean
+  FROM exhibitions e
+  WHERE e.id = $2
+    AND e.status = 'published'
   RETURNING *;
 `;
-
 export const getProgressByUserQuery = `
   SELECT
     p.*,
@@ -18,7 +15,8 @@ export const getProgressByUserQuery = `
     s.slug AS section_slug
   FROM progress p
   INNER JOIN exhibitions e
-    ON p.exhibition_id = e.id
+  ON p.exhibition_id = e.id
+ AND e.status = 'published'
   LEFT JOIN sections s
     ON p.section_id = s.id
   WHERE p.user_id = $1
@@ -33,8 +31,9 @@ export const getProgressByExhibitionQuery = `
     s.title AS section_title,
     s.slug AS section_slug
   FROM progress p
-  INNER JOIN exhibitions e
-    ON p.exhibition_id = e.id
+ INNER JOIN exhibitions e
+  ON p.exhibition_id = e.id
+ AND e.status = 'published'
   LEFT JOIN sections s
     ON p.section_id = s.id
   WHERE p.user_id = $1

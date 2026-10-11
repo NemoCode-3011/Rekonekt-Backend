@@ -247,7 +247,7 @@ export const benin = {
         "Portuguese traders reached Benin in the late fifteenth century. They brought brass manillas, which were used as currency and as raw material for casting, and Portuguese figures appear on Benin plaques.",
       places: ["benin-city"],
       image: {
-        url: "https://collectionapi.metmuseum.org/api/collection/v1/iiif/316490/2316086/main-image licence and credit",
+        url: "https://collectionapi.metmuseum.org/api/collection/v1/iiif/316490/2316086/main-image",
         credit:
           " Gift of Mr. and Mrs. Klaus G. Perls, 1991 / Photograph courtesy of The Metropolitan Museum of Art",
         license:

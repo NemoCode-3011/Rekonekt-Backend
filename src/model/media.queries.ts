@@ -1,3 +1,5 @@
+import { publicMedia } from "./visibility";
+
 export const createMediaQuery = `
   INSERT INTO media (
     title,
@@ -13,15 +15,17 @@ export const createMediaQuery = `
 `;
 
 export const getMediaQuery = `
-  SELECT *
-  FROM media
-  ORDER BY created_at DESC;
+  SELECT m.*
+  FROM media m
+  WHERE ${publicMedia("m")}
+  ORDER BY m.created_at DESC;
 `;
 
 export const getMediaByIdQuery = `
-  SELECT *
-  FROM media
-  WHERE id = $1;
+  SELECT m.*
+  FROM media m
+  WHERE m.id = $1
+    AND ${publicMedia("m")};
 `;
 
 export const updateMediaQuery = `

@@ -23,6 +23,10 @@ export const createBookmarkController = async (req: Request, res: Response) => {
 
     const bookmark = await createBookmarkService(req.userId, artifactId);
 
+    if (!bookmark) {
+      return sendResponse(res, 404, "Artifact not found");
+    }
+
     return sendResponse(res, 201, "Bookmark created successfully", bookmark);
   } catch (error: any) {
     console.log(error.message || error);

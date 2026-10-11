@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import express from "express";
 import { Application, Request, Response } from "express";
-import { isDBConnected} from "../src/database/db";
+import { isDBConnected } from "../src/database/db";
+import { createTables } from "../src/database/db";
 import authRoutes from "../src/routes/auth.routes";
 import { connectRedis } from "@config/redis";
 import cookieParser from "cookie-parser";
@@ -30,6 +31,7 @@ import culturalGroupRoutes from "../src/routes/culturalGroups.routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
+import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
 
 dotenv.config();
 
@@ -45,7 +47,7 @@ app.use(
   }),
 );
 
-const port = process.env.PORT;
+const port = Number(process.env.PORT) || 3000;
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({
@@ -81,8 +83,30 @@ app.use("/experiences", experienceRoutes);
 app.use("/", contentRelationshipRoutes);
 app.use("/cultural-groups", culturalGroupRoutes);
 
-app.listen(port, async () => {
-  console.log(`server is running on port: ${port}`);
-  isDBConnected();
-  await connectRedis();
+// Must come after every route.
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
 });
+
+const start = async () => {
+  try {
+     isDBConnected();
+    await connectRedis();
+    // Safe to run on every start: every statement is IF NOT EXISTS.
+    await createTables();
+
+    app.listen(port, () => {
+      console.log(`server is running on port: ${port}`);
+    });
+  } catch (error) {
+    console.error("Server failed to start:", error);
+    process.exit(1);
+  }
+};
+
+
+
+start();

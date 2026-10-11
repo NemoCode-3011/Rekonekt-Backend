@@ -16,25 +16,25 @@ export const createArtifactQuery = `
 `;
 
 export const getArtifactsQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE status = 'published'
-  ORDER BY title ASC;
+  SELECT a.*
+  FROM artifacts a
+  WHERE ${publicChild("a")}
+  ORDER BY a.title ASC;
 `;
 
 export const getArtifactsBySectionQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE section_id = $1
-    AND status = 'published'
-  ORDER BY title ASC;
+  SELECT a.*
+  FROM artifacts a
+  WHERE a.section_id = $1
+    AND ${publicChild("a")}
+  ORDER BY a.title ASC;
 `;
 
 export const getArtifactByIdQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE id = $1
-    AND status = 'published';
+  SELECT a.*
+  FROM artifacts a
+  WHERE a.id = $1
+    AND ${publicChild("a")};
 `;
 
 export const updateArtifactQuery = `
@@ -59,8 +59,8 @@ export const deleteArtifactQuery = `
   RETURNING id, title, slug;
 `;
 export const getArtifactBySlugQuery = `
-  SELECT *
-  FROM artifacts
-  WHERE slug = $1
-    AND status = 'published';
+  SELECT a.*
+  FROM artifacts a
+  WHERE a.slug = $1
+    AND ${publicChild("a")};
 `;

@@ -15,19 +15,19 @@ export const createStoryQuery = `
 `;
 
 export const getStoriesBySectionQuery = `
-  SELECT *
-  FROM stories
-  WHERE section_id = $1
-    AND status = 'published'
-  ORDER BY created_at ASC;
+  SELECT s.*
+  FROM stories s
+  WHERE s.section_id = $1
+    AND ${publicChild("s")}
+  ORDER BY s.created_at ASC;
 `;
 
 export const getStoryBySlugQuery = `
-  SELECT id, section_id, title, slug, excerpt, content,
-         cover_image_url, published_at
-  FROM stories
-  WHERE slug = $1
-    AND status = 'published';
+  SELECT s.id, s.section_id, s.title, s.slug, s.excerpt, s.content,
+         s.cover_image_url, s.published_at
+  FROM stories s
+  WHERE s.slug = $1
+    AND ${publicChild("s")};
 `;
 
 export const getAllStoriesBySectionQuery = `
@@ -44,10 +44,10 @@ export const getStoryByIdQuery = `
 `;
 
 export const getPublishedStoriesQuery = `
-  SELECT id, title, slug, excerpt, cover_image_url, published_at
-  FROM stories
-  WHERE status = 'published'
-  ORDER BY published_at DESC;
+  SELECT s.id, s.title, s.slug, s.excerpt, s.cover_image_url, s.published_at
+  FROM stories s
+  WHERE ${publicChild("s")}
+  ORDER BY s.published_at DESC;
 `;
 
 export const updateStoryQuery = `

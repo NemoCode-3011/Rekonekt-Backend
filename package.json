@@ -9,7 +9,7 @@
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migration.ts",
     "seed": "tsx src/database/seed.ts",
-    "seed:aburi": "tsx scripts/seedAburi.ts"
+    "seed:benin": "tsx benin-data.mjs"
   },
   "keywords": [],
   "author": "",

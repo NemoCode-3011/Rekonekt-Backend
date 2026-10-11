@@ -191,3 +191,18 @@ export const revokeAdminQuery = `
   WHERE id = $1 AND role = 'admin'
   RETURNING id, name, email, role;
 `;
+
+// Signing up again for an email that was never verified takes the account over.
+export const takeOverUnverifiedUserQuery = `
+  UPDATE users
+  SET
+    name = $1,
+    password = $2,
+    preferred_language = $3,
+    updated_at = CURRENT_TIMESTAMP
+  WHERE email = $4
+    AND is_verified = FALSE
+    AND google_id IS NULL
+    AND role = 'visitor'
+  RETURNING id, name, email, role, cultural_group_id, preferred_language, created_at;
+`;

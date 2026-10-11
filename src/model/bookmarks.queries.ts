@@ -1,9 +1,11 @@
+import { publicChild } from "./visibility";
+
 export const createBookmarkQuery = `
-  INSERT INTO bookmarks (
-    user_id,
-    artifact_id
-  )
-  VALUES ($1, $2)
+  INSERT INTO bookmarks (user_id, artifact_id)
+  SELECT $1::int, a.id
+  FROM artifacts a
+  WHERE a.id = $2
+    AND ${publicChild("a")}
   RETURNING *;
 `;
 
@@ -21,9 +23,9 @@ export const getBookmarksByUserQuery = `
     a.place_id,
     b.created_at
   FROM bookmarks b
-  INNER JOIN artifacts a
-    ON b.artifact_id = a.id
+  INNER JOIN artifacts a ON b.artifact_id = a.id
   WHERE b.user_id = $1
+    AND ${publicChild("a")}
   ORDER BY b.created_at DESC;
 `;
 

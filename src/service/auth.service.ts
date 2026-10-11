@@ -15,12 +15,53 @@ import {
   getAdminsQuery,
   revokeAdminQuery,
   setupAdminPasswordQuery,
+  takeOverUnverifiedUserQuery,
 } from "../model/auth.queries";
 import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
 import { otpGenerator } from "@utils/otpGenerator";
 import { createSession } from "@utils/sessions";
 import { getUserForResendOtpQuery } from "../model/auth.queries";
 import { deleteUserSessions } from "../utils/sessions";
+
+const OTP_TTL_SECONDS = 300;
+const MAX_OTP_ATTEMPTS = 5;
+// One place that decides what "the same email" means.
+const cleanEmail = (email: string) => email.trim().toLowerCase();
+
+type OtpPurpose = "otp" | "password-reset";
+
+const codeKey = (purpose: OtpPurpose, email: string) => `${purpose}:${email}`;
+const attemptsKey = (purpose: OtpPurpose, email: string) =>
+  `${purpose}-attempts:${email}`;
+
+// Saves a fresh code. A new code also starts a fresh set of tries.
+const storeOtp = async (purpose: OtpPurpose, email: string, otp: string) => {
+  await redisClient.set(codeKey(purpose, email), otp, { EX: OTP_TTL_SECONDS });
+  await redisClient.del(attemptsKey(purpose, email));
+};
+
+// Checks a code. After MAX_OTP_ATTEMPTS the code is
+// deleted and the user has to ask for a new one.
+const checkOtp = async (purpose: OtpPurpose, email: string, otp: string) => {
+  const attempts = await redisClient.incr(attemptsKey(purpose, email));
+
+  if (attempts === 1) {
+    await redisClient.expire(attemptsKey(purpose, email), OTP_TTL_SECONDS);
+  }
+
+  if (attempts > MAX_OTP_ATTEMPTS) {
+    await redisClient.del(codeKey(purpose, email));
+    return false;
+  }
+
+  const storedOtp = await redisClient.get(codeKey(purpose, email));
+  return storedOtp !== null && storedOtp === otp;
+};
+
+const clearOtp = async (purpose: OtpPurpose, email: string) => {
+  await redisClient.del([codeKey(purpose, email), attemptsKey(purpose, email)]);
+};
+
 interface SignUpInput {
   name: string;
   email: string;
@@ -29,24 +70,34 @@ interface SignUpInput {
 }
 
 export const signUpService = async (data: SignUpInput) => {
-  const email = data.email.trim().toLowerCase();
+  const email = cleanEmail(data.email);
+  const name = data.name.trim();
+  const language = data.preferredLanguage ?? "en";
+  const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  const existing = await pool.query(getUserByEmail, [email]);
-  if (existing.rows.length > 0) {
+  const found = (await pool.query(getUserByEmail, [email])).rows[0];
+
+  if (found?.is_verified) {
     throw new Error("Email already exists");
   }
 
-  const hashedPassword = await bcrypt.hash(data.password, 10);
-
   let user;
   try {
-    const { rows } = await pool.query(createUserQuery, [
-      data.name.trim(),
-      email,
-      hashedPassword,
-      data.preferredLanguage ?? "en",
-    ]);
-    user = rows[0];
+    // A never-verified account is taken over by whoever signs up now.
+    const result = found
+      ? await pool.query(takeOverUnverifiedUserQuery, [
+          name,
+          hashedPassword,
+          language,
+          email,
+        ])
+      : await pool.query(createUserQuery, [
+          name,
+          email,
+          hashedPassword,
+          language,
+        ]);
+    user = result.rows[0];
   } catch (error: any) {
     if (error?.code === "23505") {
       throw new Error("Email already exists");
@@ -54,24 +105,24 @@ export const signUpService = async (data: SignUpInput) => {
     throw error;
   }
 
+  if (!user) {
+    throw new Error("Email already exists");
+  }
+
   const otp = otpGenerator();
-  await redisClient.set(`otp:${user.email}`, otp, { EX: 300 });
+  await storeOtp("otp", user.email, otp);
   await sendOtpEmail(user.email, otp);
 
-  return {
-    id: user.id,
-    email: user.email,
-  };
+  return { id: user.id, email: user.email };
 };
 
 export const verifyOtpService = async (data: {
   email: string;
   otp: string;
 }) => {
-  const email = data.email.trim().toLowerCase();
-  const storedOtp = await redisClient.get(`otp:${email}`);
+  const email = cleanEmail(data.email);
 
-  if (!storedOtp || storedOtp !== data.otp) {
+  if (!(await checkOtp("otp", email, data.otp))) {
     throw new Error("Invalid or expired OTP");
   }
 
@@ -82,7 +133,7 @@ export const verifyOtpService = async (data: {
   }
 
   const user = result.rows[0];
-  await redisClient.del(`otp:${email}`);
+  await clearOtp("otp", email);
 
   return {
     id: user.id,
@@ -99,7 +150,8 @@ export const signInService = async (data: {
   email: string;
   password: string;
 }) => {
-  const result = await pool.query(getUserByEmail, [data.email]);
+  const email = cleanEmail(data.email);
+  const result = await pool.query(getUserByEmail, [email]);
 
   if (result.rows.length === 0) {
     throw new Error("Invalid credentials");
@@ -179,10 +231,9 @@ export const createAdminService = async (data: {
       EX: 60 * 60,
     });
 
-    const clientUrl = (process.env.CLIENT_URL ?? "http://localhost:5173").replace(
-      /\/+$/,
-      "",
-    );
+    const clientUrl = (
+      process.env.CLIENT_URL ?? "http://localhost:5173"
+    ).replace(/\/+$/, "");
     await sendAdminSetupEmail(
       result.rows[0].name,
       result.rows[0].email,
@@ -235,58 +286,48 @@ export const setupAdminPasswordService = async (
   return result.rows[0];
 };
 
-export const resendOtpService = async (email: string) => {
+export const resendOtpService = async (rawEmail: string) => {
+  const email = cleanEmail(rawEmail);
   const result = await pool.query(getUserForResendOtpQuery, [email]);
 
   const user = result.rows[0];
 
-  if (!user) {
-    throw new Error("User not found");
+  // Same answer whether or not the account exists, so this endpoint can't be
+  // used to find out which emails are registered.
+  if (user && !user.is_verified) {
+    const otp = otpGenerator();
+
+    await storeOtp("otp", email, otp);
+    await sendOtpEmail(email, otp);
   }
 
-  if (user.is_verified) {
-    throw new Error("Email is already verified");
-  }
-
-  const otp = otpGenerator();
-
-  await redisClient.set(`otp:${email}`, otp, { EX: 300 });
-
-  await sendOtpEmail(email, otp);
-
-  return {
-    email: user.email,
-  };
+  return { email };
 };
 
-export const forgotPasswordService = async (email: string) => {
+export const forgotPasswordService = async (rawEmail: string) => {
+  const email = cleanEmail(rawEmail);
   const result = await pool.query(getUserByEmail, [email]);
 
   const user = result.rows[0];
 
-  if (!user) {
-    throw new Error("User not found");
+  // Same answer whether or not the account exists (see resendOtpService).
+  if (user) {
+    const otp = otpGenerator();
+
+    await storeOtp("password-reset", email, otp);
+    await sendOtpEmail(email, otp);
   }
 
-  const otp = otpGenerator();
-
-  await redisClient.set(`password-reset:${email}`, otp, { EX: 300 });
-
-  await sendOtpEmail(email, otp);
-
-  return {
-    email: user.email,
-  };
+  return { email };
 };
 
 export const resetPasswordService = async (
-  email: string,
+  rawEmail: string,
   otp: string,
   newPassword: string,
 ) => {
-  const storedOtp = await redisClient.get(`password-reset:${email}`);
-
-  if (!storedOtp || storedOtp !== otp) {
+  const email = cleanEmail(rawEmail);
+  if (!(await checkOtp("password-reset", email, otp))) {
     throw new Error("Invalid or expired OTP");
   }
 
@@ -301,13 +342,12 @@ export const resetPasswordService = async (
     throw new Error("User not found");
   }
 
-  await redisClient.del(`password-reset:${email}`);
+  await clearOtp("password-reset", email);
 
   await deleteUserSessions(result.rows[0].id);
 
   return result.rows[0];
 };
-
 
 export const updateProfileService = async (
   userId: number,

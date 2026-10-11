@@ -33,6 +33,10 @@ export const createProgressController = async (req: Request, res: Response) => {
       completed ?? false,
     );
 
+    if (!progress) {
+      return sendResponse(res, 404, "Exhibition not found");
+    }
+
     return sendResponse(res, 201, "Progress created successfully", progress);
   } catch (error: any) {
     console.log(error.message || error);

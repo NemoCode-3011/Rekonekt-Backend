@@ -1,3 +1,4 @@
+import { publicChild, publicStandalone } from "./visibility";
 export const addEventPersonQuery = `
   INSERT INTO event_people (
     event_id,
@@ -7,13 +8,15 @@ export const addEventPersonQuery = `
   RETURNING *;
 `;
 
+
 export const getPeopleByEventQuery = `
   SELECT p.*
   FROM people p
-  INNER JOIN event_people ep
-    ON p.id = ep.person_id
-    WHERE ep.event_id = $1
-    AND p.status = 'published'
+  INNER JOIN event_people ep ON ep.person_id = p.id
+  INNER JOIN events e ON e.id = ep.event_id
+  WHERE ep.event_id = $1
+    AND ${publicStandalone("p")}
+    AND ${publicChild("e")}
   ORDER BY p.name ASC;
 `;
 

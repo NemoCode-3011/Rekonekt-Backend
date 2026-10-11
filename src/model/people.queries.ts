@@ -1,3 +1,4 @@
+import { publicStandalone } from "./visibility";
 export const createPersonQuery = `
   INSERT INTO people (
     name,
@@ -10,18 +11,26 @@ export const createPersonQuery = `
   RETURNING *;
 `;
 
+
 export const getPeopleQuery = `
-  SELECT *
-  FROM people
-  WHERE status = 'published'
-  ORDER BY name ASC;
+  SELECT p.*
+  FROM people p
+  WHERE ${publicStandalone("p")}
+  ORDER BY p.name ASC;
 `;
 
 export const getPersonByIdQuery = `
-  SELECT *
-  FROM people
-  WHERE id = $1
-    AND status = 'published';
+  SELECT p.*
+  FROM people p
+  WHERE p.id = $1
+    AND ${publicStandalone("p")};
+`;
+
+export const getPersonBySlugQuery = `
+  SELECT p.*
+  FROM people p
+  WHERE p.slug = $1
+    AND ${publicStandalone("p")};
 `;
 export const updatePersonQuery = `
   UPDATE people
@@ -42,9 +51,3 @@ export const deletePersonQuery = `
   RETURNING id, name, slug;
 `;
 
-export const getPersonBySlugQuery = `
-  SELECT *
-  FROM people
-  WHERE slug = $1
-    AND status = 'published';
-`;

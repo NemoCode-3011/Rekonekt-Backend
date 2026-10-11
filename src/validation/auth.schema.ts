@@ -1,23 +1,27 @@
 import { z } from "zod";
 
+// Every email is trimmed and lowercased here, so cap letters and small ass letters for emails
+// are the same address everywhere the backend uses a schema.
+const emailField = z.string().trim().toLowerCase().email("Invalid email address");
+
 export const signupSchema = z.object({
   name: z
     .string()
     .min(2, "Name must be at least 2 characters")
     .max(150, "Name must not exceed 150 characters"),
 
-  email: z.string().email("Invalid email address"),
+  email: emailField,
   password: z.string().min(8, "Password must be at least 8 characters"),
   preferredLanguage: z.string().optional(),
 });
 
 export const signInSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: emailField,
   password: z.string().min(1, "Password is required"),
 });
 
 export const verifyOtpSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: emailField,
 
   otp: z
     .string()
@@ -26,11 +30,11 @@ export const verifyOtpSchema = z.object({
 });
 
 export const resendOtpSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: emailField,
 });
 
 export const resetPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: emailField,
 
   otp: z
     .string()
@@ -68,7 +72,7 @@ export const createAdminSchema = z.object({
     .trim()
     .min(2, "Name must be at least 2 characters")
     .max(150, "Name must not exceed 150 characters"),
-  email: z.string().trim().email("Invalid email address"),
+  email: emailField,
   preferredLanguage: z.enum(["en", "yo", "ig", "ha"]).optional(),
 });
 
