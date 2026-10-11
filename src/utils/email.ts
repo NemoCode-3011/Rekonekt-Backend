@@ -190,10 +190,10 @@ const createOtpEmail = (otp: string) => {
 
 export const sendOtpEmail = async (email: string, otp: string) => {
   const mailOption = {
-    from: `"REKONEKT" <${process.env.SMTP_USER}>`,
+    from: `"REKÒ" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Verify your REKONEKT account",
-    text: `Your REKONEKT verification code is ${otp}. It expires in 5 minutes.`,
+    subject: "Verify your REKÒ account",
+    text: `Your REKÒ verification code is ${otp}. It expires in 5 minutes.`,
     html: createOtpEmail(otp),
   };
 
@@ -221,18 +221,68 @@ export const sendAdminSetupEmail = async (
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   const mailOption = {
-    from: `"REKONEKT" <${process.env.SMTP_USER}>`,
+    from: `" REKÒ" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Set up your REKONEKT admin account",
-    text: `Hello ${name}, your REKONEKT admin account is ready. Sign in with ${email} after setting your password using this one-time link: ${setupUrl}. The link expires in 1 hour.`,
+    subject: "Set up your REKÒ admin account",
+    text: `Hello ${name}, your  REKÒ admin account is ready. Sign in with ${email} after setting your password using this one-time link: ${setupUrl}. The link expires in 1 hour.`,
     html: `
-      <div style="font-family: Arial, Helvetica, sans-serif; color: #171914; max-width: 560px; margin: 32px auto; padding: 32px; border: 1px solid #d8c7a9; border-radius: 12px;">
-        <h1 style="color: #0b5d3b;">Welcome to REKONEKT</h1>
-        <p>Hello ${safeName},</p>
-        <p>Your administrator account has been created. Set your password using the one-time link below, then sign in with <strong>${safeEmail}</strong>.</p>
-        <p><a href="${escapeHtml(setupUrl)}" style="display: inline-block; padding: 12px 20px; background: #0b5d3b; color: #fff; text-decoration: none; border-radius: 6px;">Set your password</a></p>
-        <p>This link expires in 1 hour and can only be used once. If you were not expecting this invitation, contact your REKONEKT administrator.</p>
+    <div style="margin:0;padding:32px 16px;background-color:#F5F0E6;font-family:'Instrument Sans',Arial,Helvetica,sans-serif;color:#171914;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="padding:28px 32px;background-color:#0B5D3B;border-radius:8px 8px 0 0;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.1;letter-spacing:1px;color:#F5F0E6;">
+        REKÒ
       </div>
+      <div style="margin-top:10px;font-size:10px;letter-spacing:2px;color:#F5F0E6;">
+        KNOW YOUR ROOTS. OWN YOUR FUTURE.
+      </div>
+    </div>
+
+    <div style="padding:36px 32px;background-color:#FFFFFF;border:1px solid #D8C7A9;border-top:0;">
+      <p style="margin:0 0 16px;font-size:11px;font-weight:bold;letter-spacing:2px;color:#A66A3F;">
+        ADMINISTRATOR INVITATION
+      </p>
+
+      <h1 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',serif;font-size:32px;line-height:1.2;font-weight:normal;color:#171914;">
+        Welcome to REKÒ.
+      </h1>
+
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.8;">
+        Hello ${safeName},
+      </p>
+
+      <p style="margin:0 0 24px;font-size:15px;line-height:1.8;color:#3E4039;">
+        Your administrator account is ready. Set your password to activate your access to the REKÒ administration workspace.
+      </p>
+
+      <p style="margin:0 0 8px;font-size:12px;color:#66685F;">
+        YOUR SIGN-IN EMAIL
+      </p>
+
+      <div style="padding:14px 16px;margin-bottom:28px;background-color:#F5F0E6;border:1px solid #D8C7A9;border-radius:4px;font-size:14px;overflow-wrap:anywhere;">
+        <strong>${safeEmail}</strong>
+      </div>
+
+      <div style="margin:0 0 24px;">
+        <a href="${escapeHtml(setupUrl)}" style="display:inline-block;padding:15px 24px;background-color:#0B5D3B;border-radius:4px;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;">
+          Set your password &rarr;
+        </a>
+      </div>
+
+      <p style="margin:0;font-size:13px;line-height:1.8;color:#62645C;">
+        This invitation expires in one hour and can only be used once. If you weren't expecting it, contact your REKÒ administrator.
+      </p>
+
+      <div style="height:1px;margin:32px 0 20px;background-color:#D8C7A9;"></div>
+
+      <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6;color:#163F32;">
+        Exploring Nigeria's history, culture, and the stories shaping its present.
+      </p>
+    </div>
+    <div style="padding:18px 12px;text-align:center;font-size:11px;line-height:1.7;color:#62645C;">
+      REKÒ &middot; Know Your Roots. Own Your Future.
+    </div>
+  </div>
+</div>
     `,
   };
 
