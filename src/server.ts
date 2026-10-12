@@ -93,13 +93,13 @@ process.on("unhandledRejection", (reason) => {
 
 const start = async () => {
   try {
-     isDBConnected();
     await connectRedis();
     // Safe to run on every start: every statement is IF NOT EXISTS.
     await createTables();
-
+    
     app.listen(port, () => {
       console.log(`server is running on port: ${port}`);
+      isDBConnected();
     });
   } catch (error) {
     console.error("Server failed to start:", error);
