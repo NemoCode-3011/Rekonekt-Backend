@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { redisClient } from "../config/redis";
 import { sendResponse } from "../utils/response";
 import { SESSION_TTL_SECONDS } from "../utils/sessions";
+import { sessionCookieOptions } from "../utils/cookies";
 
 const createSessionVerifier =
   (missingSessionMessage: string, missingSessionData: unknown = null) =>
@@ -27,6 +28,9 @@ const createSessionVerifier =
 
       // Every request restarts the 24-hour timer, so only inactivity ends a session.
       await redisClient.expire(`session:${sessionId}`, SESSION_TTL_SECONDS);
+
+      // Slide the cookie forward too, so it expires with the session.
+      res.cookie("sessionId", sessionId, sessionCookieOptions);
 
       req.userId = userId;
 

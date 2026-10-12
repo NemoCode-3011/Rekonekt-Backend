@@ -5,6 +5,7 @@ import {
   getExhibitionBySlugController,
   publishExhibitionController,
   updateExhibitionController,
+  unpublishExhibitionController
 } from "../controller/exhibitions.controller";
 import { verifyUser } from "src/middleware/auth.middleware";
 import { createExhibitionController } from "../controller/exhibitions.controller";
@@ -18,6 +19,7 @@ router.get("/admin",verifyUser,requireRole("admin", "super admin"),getAdminExhib
 router.get("/:slug", getExhibitionBySlugController);
 router.post("/", verifyUser, requireRole("admin", "super admin"),createExhibitionController);
 router.patch("/:id/publish",verifyUser,requireRole("admin", "super admin"), publishExhibitionController);
+router.patch("/:id/unpublish", verifyUser, requireRole("admin", "super admin"), unpublishExhibitionController);
 router.delete("/:id",verifyUser,requireRole("admin", "super admin"),deleteExhibitionController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateExhibitionController);
 

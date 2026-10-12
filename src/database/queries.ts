@@ -278,3 +278,8 @@ BEGIN
   END LOOP;
 END $$;
 `;
+
+export const lowercaseUserEmails = `
+  UPDATE users SET email = lower(email) WHERE email <> lower(email);
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_key ON users (lower(email));
+`;

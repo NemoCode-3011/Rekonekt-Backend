@@ -28,6 +28,7 @@ import {
   alterUsersTableAddIsVerified,
   alterUsersTableAddGoogleId,
   alterContentTablesAddStatus,
+  lowercaseUserEmails,
 } from "./queries";
 
 dotenv.config();
@@ -101,8 +102,10 @@ export const createTables = async () => {
     console.log("user table altered");
     await client.query(alterUsersTableAddGoogleId);
     console.log("users table altered for google");
-        await client.query(alterContentTablesAddStatus);
+    await client.query(alterContentTablesAddStatus);
     console.log("content tables altered for publishing");
+    await client.query(lowercaseUserEmails);
+    console.log("user emails lowercased and unique");
   } catch (error) {
     console.error("Error creating tables:", error);
     throw error;

@@ -11,6 +11,7 @@ import { uploadToR2 } from "src/service/r2.service";
 import {
   createMediaSchema,
   updateMediaSchema,
+  uploadMediaSchema,
 } from "src/validation/media.schema";
 
 export const createMediaController = async (req: Request, res: Response) => {
@@ -123,34 +124,45 @@ export const deleteMediaController = async (req: Request, res: Response) => {
   }
 };
 
+const mediaTypeFromMime = (mime: string) => {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("audio/")) return "audio";
+  if (mime.startsWith("video/")) return "video";
+  return "document";
+};
+
 export const uploadMediaController = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return sendResponse(res, 400, "File is required");
     }
 
-    const { title, mediaType, caption, description, sourceCredit, license } =
-      req.body;
+    // Check the text fields BEFORE the file goes to R2.
+    const validation = uploadMediaSchema.safeParse(req.body);
 
-    if (!title || !mediaType) {
-      return sendResponse(res, 400, "Title and media type are required");
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
     }
+
+    const { title, caption, description, sourceCredit, license } =
+      validation.data;
 
     const fileUrl = await uploadToR2(req.file);
 
     const media = await createMediaService({
       title,
-      mediaType,
+      mediaType: mediaTypeFromMime(req.file.mimetype),
       fileUrl,
-      caption: caption || null,
-      description: description || null,
-      sourceCredit: sourceCredit || null,
-      license: license || null,
+      caption: caption || undefined,
+      description: description || undefined,
+      sourceCredit: sourceCredit || undefined,
+      license: license || undefined,
     });
 
     return sendResponse(res, 201, "Media uploaded successfully", media);
   } catch (error: any) {
     console.log(error.message || error);
+
     return sendResponse(res, 500, "Media upload failed");
   }
 };

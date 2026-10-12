@@ -308,8 +308,8 @@ export const changePasswordController = async (req: Request, res: Response) => {
       req.userId,
       validation.data.currentPassword,
       validation.data.newPassword,
+      req.cookies.sessionId,
     );
-
     return sendResponse(res, 200, "Password changed successfully");
   } catch (error: any) {
     if (error.message === "Current password is incorrect") {

@@ -7,6 +7,7 @@ import {
   publishExhibitionQuery,
   deleteExhibitionQuery,
   updateExhibitionQuery,
+  unpublishExhibitionQuery,
 } from "src/model/exhibition.queries";
 
 export const getPublishedExhibitionsService = async () => {
@@ -92,7 +93,18 @@ export const deleteExhibitionService = async (id: number) => {
   return result.rows[0];
 };
 
-export const updateExhibitionService = async (id: number,
+export const unpublishExhibitionService = async (id: number) => {
+  const result = await pool.query(unpublishExhibitionQuery, [id]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Exhibition not found");
+  }
+
+  return result.rows[0];
+};
+
+export const updateExhibitionService = async (
+  id: number,
   data: {
     title: string;
     slug: string;

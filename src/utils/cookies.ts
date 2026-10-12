@@ -1,19 +1,19 @@
+import { SESSION_TTL_SECONDS } from "./sessions";
+
 const isProduction = process.env.NODE_ENV === "production";
 
-// Used when logging in (setting the cookie)
-export const sessionCookieOptions = {
+const sameSite = process.env.CROSS_SITE_COOKIES === "true" ? "none" : "lax";
+
+const baseOptions = {
   httpOnly: true,
-  secure: isProduction,
-  // "none" lets a deployed frontend on another domain send the cookie.
-  // "lax" is fine for localhost.
-  sameSite: isProduction ? ("none" as const) : ("lax" as const),
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: isProduction || sameSite === "none",
+  sameSite: sameSite as "none" | "lax",
 };
 
-// Used when logging out (clearing the cookie).
-// Must match the login options, minus maxAge.
-export const clearSessionCookieOptions = {
-  httpOnly: true,
-  secure: isProduction,
-  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+export const sessionCookieOptions = {
+  ...baseOptions,
+  maxAge: SESSION_TTL_SECONDS * 1000,
 };
+
+// Used when logging out. Must match the login options, minus maxAge.
+export const clearSessionCookieOptions = baseOptions;

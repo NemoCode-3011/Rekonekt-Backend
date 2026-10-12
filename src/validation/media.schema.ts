@@ -8,12 +8,9 @@ export const createMediaSchema = z.object({
     .min(2, "Title must be at least 2 characters")
     .max(255, "Title must not exceed 255 characters"),
 
-  mediaType: z
-    .string({
-      error: "Media type is required",
-    })
-    .min(2, "Media type is required")
-    .max(50, "Media type must not exceed 50 characters"),
+  mediaType: z.enum(["image", "document", "audio", "video"], {
+    error: "Media type must be image, document, audio or video",
+  }),
 
   fileUrl: z
     .string({
@@ -21,13 +18,9 @@ export const createMediaSchema = z.object({
     })
     .url("Invalid file URL"),
 
-  caption: z
-    .string()
-    .optional(),
+  caption: z.string().optional(),
 
-  description: z
-    .string()
-    .optional(),
+  description: z.string().optional(),
 
   sourceCredit: z
     .string()
@@ -40,5 +33,10 @@ export const createMediaSchema = z.object({
     .optional(),
 });
 
-export const updateMediaSchema =
-  createMediaSchema.partial();
+export const updateMediaSchema = createMediaSchema.partial();
+
+// Uploads: the type comes from the file, so the form only sends text fields.
+export const uploadMediaSchema = createMediaSchema.omit({
+  fileUrl: true,
+  mediaType: true,
+});

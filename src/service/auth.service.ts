@@ -383,6 +383,7 @@ export const changePasswordService = async (
   userId: number,
   currentPassword: string,
   newPassword: string,
+  currentSessionId?: string,
 ) => {
   const result = await pool.query(getUserPasswordByIdQuery, [userId]);
 
@@ -402,7 +403,10 @@ export const changePasswordService = async (
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   await pool.query(updateUserPasswordByIdQuery, [hashedPassword, userId]);
+
+  await deleteUserSessions(userId, currentSessionId);
 };
+
 
 export const getAdminsService = async () => {
   const result = await pool.query(getAdminsQuery);

@@ -7,10 +7,13 @@ import {
   publishExhibitionService,
   updateExhibitionService,
   deleteExhibitionService,
+  unpublishExhibitionService
 } from "../service/exhibitions.service";
 import { sendResponse } from "src/utils/response";
-import { createExhibitionSchema, updateExhibitionSchema } from "src/validation/exhibition.schema";
-
+import {
+  createExhibitionSchema,
+  updateExhibitionSchema,
+} from "src/validation/exhibition.schema";
 
 export const getPublishedExhibitionsController = async (
   req: Request,
@@ -73,7 +76,10 @@ export const getExhibitionBySlugController = async (
   }
 };
 
-export const createExhibitionController = async (req: Request, res: Response) => {
+export const createExhibitionController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const validation = createExhibitionSchema.safeParse(req.body);
 
@@ -143,33 +149,52 @@ export const publishExhibitionController = async (
   }
 };
 
-export const updateExhibitionController = async (
-  req: Request,
-  res: Response,
-) => {
+export const unpublishExhibitionController = async (req: Request, res: Response,) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid exhibition ID");
+    }
+
+    const result = await unpublishExhibitionService(id);
+
+    return sendResponse(
+      res,
+      200,
+      "Exhibition unpublished successfully",
+      result,
+    );
+  } catch (error: any) {
+    if (error.message === "Exhibition not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const updateExhibitionController = async (req: Request,res: Response) => {
   try {
     const validation = updateExhibitionSchema.safeParse(req.body);
 
-if (!validation.success) {
-  return sendResponse(
-    res,
-    400,
-    validation.error.issues[0].message
-  );
-}
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
 
-const exhibition = await updateExhibitionService(
-  Number(req.params.id),
-  validation.data as Parameters<typeof updateExhibitionService>[1],
-);
+    const exhibition = await updateExhibitionService(
+      Number(req.params.id),
+      validation.data as Parameters<typeof updateExhibitionService>[1],
+    );
 
-return sendResponse(
-  res,
-  200,
-  "Exhibition updated successfully",
-  exhibition
-);
-
+    return sendResponse(
+      res,
+      200,
+      "Exhibition updated successfully",
+      exhibition,
+    );
   } catch (error: any) {
     if (error.message === "Exhibition not found") {
       return sendResponse(res, 404, error.message);
@@ -183,10 +208,7 @@ return sendResponse(
     return sendResponse(res, 500, "Internal server error");
   }
 };
-export const deleteExhibitionController = async (
-  req: Request,
-  res: Response,
-) => {
+export const deleteExhibitionController = async (req: Request,res: Response,) => {
   try {
     const id = Number(req.params.id);
 

@@ -73,6 +73,16 @@ export const publishExhibitionQuery = `
   WHERE id = $1
   RETURNING *;
 `;
+
+export const unpublishExhibitionQuery = `
+  UPDATE exhibitions
+  SET
+    status = 'draft',
+    updated_at = CURRENT_TIMESTAMP
+  WHERE id = $1
+  RETURNING *;
+`;
+
 export const deleteExhibitionQuery = `
   DELETE FROM exhibitions
   WHERE id = $1
