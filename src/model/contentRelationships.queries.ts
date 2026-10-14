@@ -63,7 +63,7 @@ export const getSourcesForContentQuery = (targetType: SourceTargetType) => {
   return `
     SELECT s.id, s.title, s.author, s.publication, s.source_type,
            to_char(s.publication_date, 'YYYY-MM-DD') AS publication_date,
-           s.url, s.citation, s.rights_statement, s.perspective_note,
+           s.url, s.citation, s.rights_statement, s.perspective_note, s.cover_image_url,
            s.created_at, s.updated_at, sl.relationship, sl.display_order
     FROM source_links sl
     JOIN sources s ON s.id = sl.source_id

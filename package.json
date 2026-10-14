@@ -9,7 +9,8 @@
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migration.ts",
     "seed": "tsx src/database/seed.ts",
-    "seed:benin": "tsx benin-data.mjs"
+    "seed:benin": "node --env-file=.env seed-benin.mjs",
+    "seed:reading": "node --env-file=.env add-reading.mjs"
   },
   "keywords": [],
   "author": "",

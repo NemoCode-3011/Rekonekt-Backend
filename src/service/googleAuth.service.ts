@@ -15,6 +15,7 @@ import {
 const randomPasswordHash = () =>
   bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
+
 // Someone already has an account with this email: attach the Google login to it.
 const linkGoogleToExistingUser = async (
   existing: {
@@ -72,7 +73,7 @@ export const authenticateWithGoogle = async (credential: string) => {
 
   const googleId = payload.sub;
   const email = payload.email.trim().toLowerCase();
-  const name = payload.name || "REKONEKT User";
+  const name = payload.name || "REKÒ User";
 
   // 1. Known Google account
   const googleUser = await pool.query(getUserByGoogleIdQuery, [googleId]);

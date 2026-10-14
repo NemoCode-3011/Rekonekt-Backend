@@ -802,3 +802,88 @@ export const benin = {
     },
   },
 };
+
+// Books, papers and resources for further reading.
+const cover = (isbn) =>
+  `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`;
+
+export const reading = [
+  {
+    title:
+      "The Brutish Museums: The Benin Bronzes, Colonial Violence and Cultural Restitution",
+    author: "Dan Hicks",
+    publication: "Pluto Press",
+    sourceType: "book",
+    publicationDate: "2020-01-01", // only the year is shown
+    url: "https://www.plutobooks.com/9780745341767/the-brutish-museums/",
+    coverImageUrl: cover("9780745341767"),
+    rightsStatement: "Cover image via Open Library.",
+    note: "Makes a committed case for restitution. Read it alongside a more even-handed account such as Loot.",
+    chapters: ["the-fall-of-benin", "scattered-across-the-world", "the-long-return"],
+  },
+  {
+    title: "Loot: Britain and the Benin Bronzes (revised edition)",
+    author: "Barnaby Phillips",
+    publication: "Oneworld Publications",
+    sourceType: "book",
+    publicationDate: "2022-01-01",
+    url: "https://openlibrary.org/isbn/9780861543137",
+    coverImageUrl: cover("9780861543137"),
+    rightsStatement: "Cover image via Open Library.",
+    note: "A journalist's account of the kingdom, the 1897 raid and the restitution debate, including Nigerian voices.",
+    chapters: ["the-fall-of-benin", "scattered-across-the-world", "the-long-return"],
+  },
+  {
+    title: "The Art of Benin (revised edition)",
+    author: "Paula Girshick Ben-Amos",
+    publication: "British Museum Press",
+    sourceType: "book",
+    publicationDate: "1995-01-01",
+    url: "https://openlibrary.org/isbn/0714125202",
+    coverImageUrl: cover("0714125202"),
+    rightsStatement: "Cover image via Open Library.",
+    note: "Explains the role of art at the Benin court, drawing on oral tradition, archaeology and early travellers' accounts.",
+    chapters: ["a-kingdom-takes-shape", "court-craft-and-contact"],
+  },
+  {
+    title: "A Short History of Benin",
+    author: "Jacob U. Egharevba",
+    publication: "Ibadan University Press",
+    sourceType: "book",
+    publicationDate: "1968-01-01", // fourth edition
+    url: "https://openlibrary.org/search?q=a+short+history+of+benin+egharevba",
+    coverImageUrl: "https://books.google.com.ng/books/content?id=FukJAQAAIAAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE73pobDl00tT-AMNa_dQGT9VVZLaFSCZ0U6BMZYhziHxJBZJCGuwmHwXfkGop181qYOQvO0HRA4N_vkRml76xufhLvO_YTf-zMddC59J9Fk6BLp7y2B7oGZjVbjZElIHTIRgQMqc",
+    note: "A founding work by an Edo historian, built on oral tradition. Much of what is known about the early kings rests on it, so scholars compare it with other evidence.",
+    chapters: ["a-kingdom-takes-shape"],
+  },
+  {
+    title: "The Scholarship of Jacob Egharevba of Benin",
+    author: "Uyilawa Usuanlele and Toyin Falola",
+    publication: "History in Africa",
+    sourceType: "paper",
+    publicationDate: "1994-01-01",
+    url: "https://resolve.cambridge.org/core/journals/history-in-africa/article/abs/scholarship-of-jacob-egharevba-of-benin/E266635435737813E7FFC5FD6F1D88A6",
+    rightsStatement: "Journal article. Access may depend on your library.",
+    chapters: ["a-kingdom-takes-shape"],
+  },
+  {
+    title:
+      "German brass for Benin Bronzes: Geochemical analysis insights into the early Atlantic trade",
+    author: "Tobias B. Skowronek and colleagues",
+    publication: "PLOS ONE",
+    sourceType: "paper",
+    publicationDate: "2023-01-01",
+    url: "https://doi.org/10.1371/journal.pone.0283415",
+    rightsStatement: "Open access.",
+    note: "A scientific study of where the brass in the Benin Bronzes came from.",
+    chapters: ["court-craft-and-contact"],
+  },
+  {
+    title: "Digital Benin",
+    publication: "digitalbenin.org",
+    sourceType: "database",
+    url: "https://digitalbenin.org",
+    note: "An online catalogue of Benin objects in museum collections.",
+    chapters: ["scattered-across-the-world", "the-long-return"],
+  },
+];

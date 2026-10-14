@@ -35,6 +35,13 @@ export const createSourceSchema = z.object({
     .url("Invalid source URL")
     .optional(),
 
+
+  coverImageUrl: z
+    .string()
+    .url("Invalid cover image URL")
+    .max(500, "Cover image URL must not exceed 500 characters")
+    .optional(),
+
   citation: z
     .string()
     .optional(),

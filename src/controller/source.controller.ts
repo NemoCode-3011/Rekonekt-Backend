@@ -30,6 +30,7 @@ export const createSourceController = async (req: Request, res: Response) => {
       citation,
       rightsStatement,
       perspectiveNote,
+      coverImageUrl
     } = validation.data;
 
     const source = await createSourceService(
@@ -42,6 +43,7 @@ export const createSourceController = async (req: Request, res: Response) => {
       citation ?? null,
       rightsStatement ?? null,
       perspectiveNote ?? null,
+      coverImageUrl ?? null
     );
 
     return sendResponse(res, 201, "Source created successfully", source);

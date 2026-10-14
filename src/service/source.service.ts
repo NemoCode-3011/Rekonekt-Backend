@@ -17,6 +17,7 @@ export const createSourceService = async (
   citation: string | null,
   rightsStatement: string | null,
   perspectiveNote: string | null,
+  coverImageUrl: string | null
 ) => {
   const result = await pool.query(createSourceQuery, [
     title,
@@ -28,6 +29,7 @@ export const createSourceService = async (
     citation,
     rightsStatement,
     perspectiveNote,
+     coverImageUrl,
   ]);
 
   return result.rows[0];
@@ -57,6 +59,8 @@ export const updateSourceService = async (
     citation: string | null;
     rightsStatement: string | null;
     perspectiveNote: string | null;
+    coverImageUrl: string | null;
+
   },
 ) => {
   const result = await pool.query(updateSourceQuery, [
@@ -69,6 +73,7 @@ export const updateSourceService = async (
     data.citation,
     data.rightsStatement,
     data.perspectiveNote,
+    data.coverImageUrl,
     id,
   ]);
 

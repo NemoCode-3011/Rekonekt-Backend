@@ -4,6 +4,13 @@ export const createProgressQuery = `
   FROM exhibitions e
   WHERE e.id = $2
     AND e.status = 'published'
+    AND (
+      $3::int IS NULL
+      OR EXISTS (
+        SELECT 1 FROM sections s
+        WHERE s.id = $3::int AND s.exhibition_id = e.id
+      )
+    )
   RETURNING *;
 `;
 export const getProgressByUserQuery = `
@@ -39,7 +46,6 @@ export const getProgressByExhibitionQuery = `
   WHERE p.user_id = $1
     AND p.exhibition_id = $2;
 `;
-
 export const updateProgressQuery = `
   UPDATE progress
   SET
@@ -48,6 +54,13 @@ export const updateProgressQuery = `
     last_viewed_at = CURRENT_TIMESTAMP
   WHERE user_id = $3
     AND exhibition_id = $4
+    AND (
+      $1::int IS NULL
+      OR EXISTS (
+        SELECT 1 FROM sections s
+        WHERE s.id = $1::int AND s.exhibition_id = $4
+      )
+    )
   RETURNING *;
 `;
 

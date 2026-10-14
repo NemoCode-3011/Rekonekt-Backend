@@ -1,16 +1,9 @@
 export const createSourceQuery = `
   INSERT INTO sources (
-    title,
-    author,
-    publication,
-    source_type,
-    publication_date,
-    url,
-    citation,
-    rights_statement,
-    perspective_note
+    title, author, publication, source_type, publication_date,
+    url, citation, rights_statement, perspective_note, cover_image_url
   )
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
   RETURNING *;
 `;
 
@@ -38,8 +31,9 @@ export const updateSourceQuery = `
     citation = COALESCE($7, citation),
     rights_statement = COALESCE($8, rights_statement),
     perspective_note = COALESCE($9, perspective_note),
+    cover_image_url = COALESCE($10, cover_image_url),
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $10
+  WHERE id = $11
   RETURNING *;
 `;
 export const deleteSourceQuery = `
