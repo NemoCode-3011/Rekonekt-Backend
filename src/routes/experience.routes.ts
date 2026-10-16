@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { getExperienceBySlugController } from "../controller/experience.controller";
-import { requireExhibitionSignup } from "src/middleware/auth.middleware";
+import { optionalSession } from "src/middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/:slug", requireExhibitionSignup, getExperienceBySlugController);
+router.get("/:slug", optionalSession, getExperienceBySlugController);
 
 export default router;

@@ -43,7 +43,36 @@ const createSessionVerifier =
   };
 
 export const verifyUser = createSessionVerifier("Authentication required");
-export const requireExhibitionSignup = createSessionVerifier(
-  "Sign up or sign in to view the full exhibition",
-  { code: "SIGNUP_REQUIRED" },
-);
+
+// For public pages that anyone may read. A visitor with a valid session is
+// recognised, Everyone else carries on as an anonymous visitor: no 401.
+// If Redis is down, the visitor is treated as anonymous too, so a public
+// page never fails just because sessions are unavailable.
+export const optionalSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sessionId = req.cookies?.sessionId;
+
+    if (sessionId) {
+      const session = await redisClient.get(`session:${sessionId}`);
+
+      if (session) {
+        const { userId } = JSON.parse(session);
+
+        await redisClient.expire(`session:${sessionId}`, SESSION_TTL_SECONDS);
+        res.cookie("sessionId", sessionId, sessionCookieOptions);
+
+        req.userId = userId;
+      }
+    }
+  } catch (error: any) {
+    console.log(error.message || error);
+  }
+
+  // Called outside the try block so an error further down the road is
+  // never swallowed here.
+  next();
+};

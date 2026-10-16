@@ -8,7 +8,7 @@ import {
   uploadMediaController,
 } from "src/controller/media.controller";
 import {
-  requireExhibitionSignup,
+  optionalSession,
   verifyUser,
 } from "src/middleware/auth.middleware";
 import { uploadMediaFile } from "@middleware/upload.middleware";
@@ -18,11 +18,11 @@ const router = Router();
 
 router.post("/", verifyUser, requireRole("admin", "super admin"), createMediaController);
 
-router.get("/", requireExhibitionSignup, getMediaController);
+router.get("/", optionalSession, getMediaController);
 
 router.post("/upload",verifyUser,requireRole("admin", "super admin"),uploadMediaFile.single("file"),uploadMediaController,);
 
-router.get("/:id", requireExhibitionSignup, getMediaByIdController);
+router.get("/:id", optionalSession, getMediaByIdController);
 
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateMediaController);
 

@@ -407,7 +407,6 @@ export const changePasswordService = async (
   await deleteUserSessions(userId, currentSessionId);
 };
 
-
 export const getAdminsService = async () => {
   const result = await pool.query(getAdminsQuery);
   return result.rows;
@@ -423,6 +422,8 @@ export const revokeAdminService = async (id: number, requesterId: number) => {
   if (!result.rows[0]) {
     throw new Error("Admin not found");
   }
+  // Sign admins out everywhere, so an open session wont stick
+  await deleteUserSessions(id);
 
   return result.rows[0];
 };

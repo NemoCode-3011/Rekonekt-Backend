@@ -5,7 +5,7 @@ import {
   removeEventPersonController,
 } from "../controller/eventPeople.controller";
 import {
-  requireExhibitionSignup,
+  optionalSession,
   verifyUser,
 } from "src/middleware/auth.middleware";
 import { requireRole } from "@middleware/authorize";
@@ -14,7 +14,7 @@ const router = Router();
 
 router.post("/events/:eventId/people",verifyUser,  requireRole("admin", "super admin"),addEventPersonController,);
 
-router.get("/events/:eventId/people", requireExhibitionSignup, getPeopleByEventController);
+router.get("/events/:eventId/people", optionalSession, getPeopleByEventController);
 
 router.delete("/events/:eventId/people/:personId",verifyUser,requireRole("admin", "super admin"),removeEventPersonController,);
 

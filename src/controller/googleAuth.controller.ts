@@ -12,9 +12,9 @@ export const googleAuthController = async (req: Request, res: Response) => {
       return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const { credential } = validation.data;
+    const { credential, mode } = validation.data;
 
-    const result = await authenticateWithGoogle(credential);
+    const result = await authenticateWithGoogle(credential, mode);
 
     res.cookie("sessionId", result.sessionId, sessionCookieOptions);
 
@@ -25,8 +25,11 @@ export const googleAuthController = async (req: Request, res: Response) => {
       result.user,
     );
   } catch (error: any) {
+    if (error.message === "NO_ACCOUNT") {
+      return sendResponse(res,404,"No account found for this Google email. Please sign up first.",
+      );
+    }
     console.log(error.message || error);
-
     return sendResponse(res, 401, "Google authentication failed");
   }
 };

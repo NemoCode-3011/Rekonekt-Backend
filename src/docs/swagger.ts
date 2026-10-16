@@ -459,10 +459,6 @@ const options = {
           ],
           responses: {
             200: { description: "Experience retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
             404: { description: "Exhibition not found" },
           },
         },
@@ -550,10 +546,6 @@ const options = {
           ],
           responses: {
             200: { description: "Sections retrieved successfully" },
-            401: {
-              description:
-                "Sign up or sign in to view the full exhibition",
-            },
           },
         },
       },
@@ -593,10 +585,6 @@ const options = {
           ],
           responses: {
             200: { description: "Section retrieved successfully" },
-            401: {
-              description:
-                "Sign up or sign in to view the full exhibition",
-            },
             404: { description: "Section not found" },
           },
         },
@@ -640,10 +628,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Stories retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         post: {
@@ -671,10 +655,6 @@ const options = {
           ],
           responses: {
             200: { description: "Stories retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -729,10 +709,6 @@ const options = {
           responses: {
             200: { description: "Story retrieved successfully" },
             404: { description: "Story not found" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -762,10 +738,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Events retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         post: {
@@ -793,10 +765,6 @@ const options = {
           ],
           responses: {
             200: { description: "Events retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -816,10 +784,6 @@ const options = {
           ],
           responses: {
             200: { description: "Event retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         patch: {
@@ -870,10 +834,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "People retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -928,10 +888,6 @@ const options = {
           responses: {
             200: { description: "Person retrieved successfully" },
             404: { description: "Person not found" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -950,10 +906,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Places retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -973,10 +925,6 @@ const options = {
           ],
           responses: {
             200: { description: "Place retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         patch: {
@@ -1044,10 +992,6 @@ const options = {
           ],
           responses: {
             200: { description: "People retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1108,10 +1052,6 @@ const options = {
           ],
           responses: {
             200: { description: "Places retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1155,10 +1095,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Artifacts retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1178,10 +1114,6 @@ const options = {
           ],
           responses: {
             200: { description: "Artifacts retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1236,10 +1168,6 @@ const options = {
           responses: {
             200: { description: "Artifact retrieved successfully" },
             404: { description: "Artifact not found" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1259,10 +1187,6 @@ const options = {
           responses: {
             200: { description: "Search results retrieved" },
             400: { description: "Query too short" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1281,10 +1205,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1339,10 +1259,6 @@ const options = {
           ],
           responses: {
             200: { description: "Media retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         patch: {
@@ -1393,10 +1309,6 @@ const options = {
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media attachments retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1416,10 +1328,6 @@ const options = {
           ],
           responses: {
             200: { description: "Media attachment retrieved successfully" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         patch: {
@@ -1621,10 +1529,6 @@ const options = {
           ],
           responses: {
             200: { description: "Content sources retrieved" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
       },
@@ -1644,10 +1548,6 @@ const options = {
           ],
           responses: {
             200: { description: "Section people retrieved" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         post: {
@@ -1719,10 +1619,6 @@ const options = {
           ],
           responses: {
             200: { description: "Section places retrieved" },
-            401: {
-              description:
-                "Signup required; data.code is SIGNUP_REQUIRED",
-            },
           },
         },
         post: {

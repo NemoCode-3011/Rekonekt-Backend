@@ -32,6 +32,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
+import { publicReadLimiter } from "@middleware/rateLimit.middleware";
 
 dotenv.config();
 
@@ -58,6 +59,9 @@ app.get("/health", (req: Request, res: Response) => {
 app.use(cookieParser());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Public reading needs no account, so cap how fast one IP can read.
+app.use(publicReadLimiter);
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);

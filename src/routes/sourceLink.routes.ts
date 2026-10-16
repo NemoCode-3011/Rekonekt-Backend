@@ -7,8 +7,8 @@ import {
   updateSourceLinkController,
   deleteSourceLinkController,
 } from "src/controller/sourceLink.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
-import { requireSuperAdmin } from "src/middleware/role.middleware";
+import {verifyUser } from "src/middleware/auth.middleware";
+
 
 const router = Router();
 

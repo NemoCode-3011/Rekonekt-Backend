@@ -15,7 +15,6 @@ import {
 const randomPasswordHash = () =>
   bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
-
 // Someone already has an account with this email: attach the Google login to it.
 const linkGoogleToExistingUser = async (
   existing: {
@@ -54,7 +53,7 @@ const linkGoogleToExistingUser = async (
   return linked.rows[0];
 };
 
-export const authenticateWithGoogle = async (credential: string) => {
+export const authenticateWithGoogle = async (credential: string,  mode: "signin" | "signup",) => {
   const ticket = await googleClient.verifyIdToken({
     idToken: credential,
     audience: process.env.GOOGLE_CLIENT_ID,
@@ -89,7 +88,14 @@ export const authenticateWithGoogle = async (credential: string) => {
   }
 
   // 3. Brand new user
+
+  
   if (!user) {
+
+     if (mode === "signin") {
+      throw new Error("NO_ACCOUNT");
+    }
+    
     const newUser = await pool.query(createGoogleUserQuery, [
       name,
       email,
@@ -100,7 +106,7 @@ export const authenticateWithGoogle = async (credential: string) => {
     user = newUser.rows[0];
   }
 
-  // 4. Normal REKO session
+  // 4. Normal session
   const sessionId = await createSession(user.id);
 
   return {

@@ -184,10 +184,9 @@ export const getAdminsQuery = `
   ORDER BY (role = 'super admin') DESC, created_at ASC;
 `;
 
-// Only plain admins can be revoked, so a super admin is never touched.
+// Only plain admins can be removed, so a super admin is never touched.
 export const revokeAdminQuery = `
-  UPDATE users
-  SET role = 'visitor', updated_at = CURRENT_TIMESTAMP
+  DELETE FROM users
   WHERE id = $1 AND role = 'admin'
   RETURNING id, name, email, role;
 `;

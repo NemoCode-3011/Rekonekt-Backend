@@ -46,6 +46,7 @@ export const resetPasswordSchema = z.object({
 
 export const googleAuthSchema = z.object({
   credential: z.string().min(1, "Google credential is required"),
+   mode: z.enum(["signin", "signup"]).default("signin"),
 });
 
 export const updateProfileSchema = z.object({
