@@ -9,24 +9,33 @@ import {
   getStoryBySlugQuery,
   getAllStoriesBySectionQuery,
   getPublishedStoriesQuery,
+  getDidYouKnowStoryQuery,
 } from "../model/stories.queries";
 
 export const createStoryService = async (data: {
-  sectionId: number;
+  sectionId?: number;
   title: string;
   slug: string;
   excerpt?: string;
   content?: string;
   coverImageUrl?: string;
+  category?: string;
+  didYouKnow?: string;
+  coverImageAlt?: string;
+  coverImageCredit?: string;
 }) => {
   try {
     const result = await pool.query(createStoryQuery, [
-      data.sectionId,
+      data.sectionId ?? null,
       data.title,
       data.slug,
       data.excerpt ?? null,
       data.content ?? null,
       data.coverImageUrl ?? null,
+      data.category ?? null,
+      data.didYouKnow ?? null,
+      data.coverImageAlt ?? null,
+      data.coverImageCredit ?? null,
     ]);
 
     return result.rows[0];
@@ -73,6 +82,10 @@ export const updateStoryService = async (
     excerpt?: string;
     content?: string;
     coverImageUrl?: string;
+    category?: string;
+    didYouKnow?: string;
+    coverImageAlt?: string;
+    coverImageCredit?: string;
   },
 ) => {
   try {
@@ -82,6 +95,10 @@ export const updateStoryService = async (
       data.excerpt ?? null,
       data.content ?? null,
       data.coverImageUrl ?? null,
+      data.category ?? null,
+      data.didYouKnow ?? null,
+      data.coverImageAlt ?? null,
+      data.coverImageCredit ?? null,
       id,
     ]);
     if (result.rows.length === 0) {
@@ -136,4 +153,11 @@ export const getPublishedStoriesService = async () => {
   const result = await pool.query(getPublishedStoriesQuery);
 
   return result.rows;
+};
+
+// Returns the story of the day, or null when no story has a snippet and a picture yet.
+export const getDidYouKnowStoryService = async () => {
+  const result = await pool.query(getDidYouKnowStoryQuery);
+
+  return result.rows[0] ?? null;
 };

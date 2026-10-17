@@ -287,3 +287,11 @@ export const lowercaseUserEmails = `
 export const alterSourcesTableAddCoverImage = `
   ALTER TABLE sources ADD COLUMN IF NOT EXISTS cover_image_url VARCHAR(500);
 `;
+
+export const alterStoriesAddDiscoveryFields = `
+  ALTER TABLE stories
+    ADD COLUMN IF NOT EXISTS category VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS did_you_know TEXT,
+    ADD COLUMN IF NOT EXISTS cover_image_alt VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS cover_image_credit TEXT;
+`;

@@ -61,7 +61,7 @@ const options = {
     openapi: "3.0.0",
 
     info: {
-      title: "REKONEKT API",
+      title: "REKO API",
       version: "1.0.0",
       description: "API for the REKONEKT Digital Museum of Nigerian History",
     },
@@ -415,7 +415,7 @@ const options = {
           tags: ["Exhibitions"],
           summary: "Get public exhibition previews",
           description:
-            "Returns published exhibition cover and introductory information. Full content requires a signed-in user.",
+            "Returns published exhibition cover and introductory information.",
           responses: {
             200: { description: "Exhibitions retrieved successfully" },
           },
@@ -427,7 +427,7 @@ const options = {
           tags: ["Exhibitions"],
           summary: "Get a public exhibition preview by slug",
           description:
-            "Returns the exhibition cover and introduction. Full content requires a signed-in user.",
+            "Returns the exhibition cover and introduction.",
           parameters: [
             {
               name: "slug",
@@ -447,7 +447,7 @@ const options = {
         get: {
           tags: ["Experiences"],
           summary:
-            "Get an exhibition experience with its ordered sections (signed-in users only)",
+            "Get an exhibition experience with its ordered sections",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -534,7 +534,7 @@ const options = {
       "/sections/exhibitions/{exhibitionId}": {
         get: {
           tags: ["Sections"],
-          summary: "Get sections for an exhibition (signed-in users only)",
+          summary: "Get sections for an exhibition",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -573,7 +573,7 @@ const options = {
       "/sections/{id}": {
         get: {
           tags: ["Sections"],
-          summary: "Get section by ID (signed-in users only)",
+          summary: "Get section by ID",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -624,7 +624,7 @@ const options = {
       "/stories": {
         get: {
           tags: ["Stories"],
-          summary: "Get all published stories (signed-in users only)",
+          summary: "Get all published stories",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Stories retrieved successfully" },
@@ -643,7 +643,7 @@ const options = {
       "/stories/sections/{sectionId}": {
         get: {
           tags: ["Stories"],
-          summary: "Get stories for a section (signed-in users only)",
+          summary: "Get stories for a section",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -655,6 +655,17 @@ const options = {
           ],
           responses: {
             200: { description: "Stories retrieved successfully" },
+          },
+        },
+      },
+
+      "/stories/did-you-know": {
+        get: {
+          tags: ["Stories"],
+          summary:
+            "Get the story of the day for the home page's Did you know section (data is null when none is ready)",
+          responses: {
+            200: { description: "Did you know story retrieved successfully" },
           },
         },
       },
@@ -696,7 +707,7 @@ const options = {
       "/stories/{slug}": {
         get: {
           tags: ["Stories"],
-          summary: "Get a published story by slug (signed-in users only)",
+          summary: "Get a published story by slug",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -734,7 +745,7 @@ const options = {
       "/events": {
         get: {
           tags: ["Events"],
-          summary: "Get all published events (signed-in users only)",
+          summary: "Get all published events",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Events retrieved successfully" },
@@ -753,7 +764,7 @@ const options = {
       "/events/sections/{sectionId}": {
         get: {
           tags: ["Events"],
-          summary: "Get events for a section (signed-in users only)",
+          summary: "Get events for a section",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -772,7 +783,7 @@ const options = {
       "/events/{id}": {
         get: {
           tags: ["Events"],
-          summary: "Get event by ID (signed-in users only)",
+          summary: "Get event by ID",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -830,7 +841,7 @@ const options = {
         },
         get: {
           tags: ["People"],
-          summary: "Get all people (signed-in users only)",
+          summary: "Get all people",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "People retrieved successfully" },
@@ -875,7 +886,7 @@ const options = {
       "/people/{slug}": {
         get: {
           tags: ["People"],
-          summary: "Get a published person by slug (signed-in users only)",
+          summary: "Get a published person by slug",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -902,7 +913,7 @@ const options = {
         },
         get: {
           tags: ["Places"],
-          summary: "Get all places (signed-in users only)",
+          summary: "Get all places",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Places retrieved successfully" },
@@ -913,7 +924,7 @@ const options = {
       "/places/{id}": {
         get: {
           tags: ["Places"],
-          summary: "Get place by ID (signed-in users only)",
+          summary: "Get place by ID",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -980,7 +991,7 @@ const options = {
         },
         get: {
           tags: ["Event Relationships"],
-          summary: "Get people linked to an event (signed-in users only)",
+          summary: "Get people linked to an event",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1040,7 +1051,7 @@ const options = {
         },
         get: {
           tags: ["Event Relationships"],
-          summary: "Get places linked to an event (signed-in users only)",
+          summary: "Get places linked to an event",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1091,7 +1102,7 @@ const options = {
         },
         get: {
           tags: ["Artifacts"],
-          summary: "Get all artifacts (signed-in users only)",
+          summary: "Get all artifacts",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Artifacts retrieved successfully" },
@@ -1102,7 +1113,7 @@ const options = {
       "/artifacts/sections/{sectionId}": {
         get: {
           tags: ["Artifacts"],
-          summary: "Get artifacts for a section (signed-in users only)",
+          summary: "Get artifacts for a section",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1155,7 +1166,7 @@ const options = {
       "/artifacts/{slug}": {
         get: {
           tags: ["Artifacts"],
-          summary: "Get a published artifact by slug (signed-in users only)",
+          summary: "Get a published artifact by slug",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1174,7 +1185,7 @@ const options = {
       "/search": {
         get: {
           tags: ["Search"],
-          summary: "Search published content (signed-in users only)",
+          summary: "Search published content",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1201,7 +1212,7 @@ const options = {
         },
         get: {
           tags: ["Media"],
-          summary: "Get all media (signed-in users only)",
+          summary: "Get all media",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media retrieved successfully" },
@@ -1247,7 +1258,7 @@ const options = {
       "/media/{id}": {
         get: {
           tags: ["Media"],
-          summary: "Get media by ID (signed-in users only)",
+          summary: "Get media by ID",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1305,7 +1316,7 @@ const options = {
         },
         get: {
           tags: ["Media Attachments"],
-          summary: "Get all media attachments (signed-in users only)",
+          summary: "Get all media attachments",
           security: [{ sessionCookie: [] }],
           responses: {
             200: { description: "Media attachments retrieved successfully" },
@@ -1316,7 +1327,7 @@ const options = {
       "/media-attachment/{id}": {
         get: {
           tags: ["Media Attachments"],
-          summary: "Get media attachment by ID (signed-in users only)",
+          summary: "Get media attachment by ID",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1501,7 +1512,7 @@ const options = {
         get: {
           tags: ["Source Links"],
           summary:
-            "Get sources for content (signed-in users only)",
+            "Get sources for content",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1536,7 +1547,7 @@ const options = {
         get: {
           tags: ["Content Relationships"],
           summary:
-            "Get people featured in a section (signed-in users only)",
+            "Get people featured in a section",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1607,7 +1618,7 @@ const options = {
         get: {
           tags: ["Content Relationships"],
           summary:
-            "Get places featured in a section (signed-in users only)",
+            "Get places featured in a section",
           security: [{ sessionCookie: [] }],
           parameters: [
             {

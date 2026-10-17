@@ -8,10 +8,11 @@ import {
   deleteStoryController,
   publishStoryController,
   getStoryBySlugController,
-  getPublishedStoriesController
+  getPublishedStoriesController,
+  getDidYouKnowStoryController,
 } from "../controller/stories.controller";
 import {
- optionalSession,
+  optionalSession,
   verifyUser,
 } from "src/middleware/auth.middleware";
 import { requireRole } from "@middleware/authorize";
@@ -22,6 +23,7 @@ const router = Router();
 const admin = createAdminContentController("stories", "Story");
 
 router.get("/", optionalSession, getPublishedStoriesController);
+router.get("/did-you-know", optionalSession, getDidYouKnowStoryController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/sections/:sectionId", verifyUser, requireRole("admin", "super admin"), getAdminStoriesBySectionController);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);

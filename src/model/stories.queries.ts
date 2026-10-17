@@ -8,9 +8,13 @@ export const createStoryQuery = `
     excerpt,
     content,
     cover_image_url,
+    category,
+    did_you_know,
+    cover_image_alt,
+    cover_image_credit,
     status
   )
-  VALUES ($1, $2, $3, $4, $5, $6, 'draft')
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'draft')
   RETURNING *;
 `;
 
@@ -24,7 +28,8 @@ export const getStoriesBySectionQuery = `
 
 export const getStoryBySlugQuery = `
   SELECT s.id, s.section_id, s.title, s.slug, s.excerpt, s.content,
-         s.cover_image_url, s.published_at
+         s.cover_image_url, s.cover_image_alt, s.cover_image_credit,
+         s.category, s.did_you_know, s.published_at
   FROM stories s
   WHERE s.slug = $1
     AND ${publicChild("s")};
@@ -44,10 +49,23 @@ export const getStoryByIdQuery = `
 `;
 
 export const getPublishedStoriesQuery = `
-  SELECT s.id, s.title, s.slug, s.excerpt, s.cover_image_url, s.published_at
+  SELECT s.id, s.title, s.slug, s.excerpt, s.category, s.cover_image_url,
+         s.cover_image_alt, s.cover_image_credit, s.published_at
   FROM stories s
   WHERE ${publicChild("s")}
   ORDER BY s.published_at DESC;
+`;
+
+export const getDidYouKnowStoryQuery = `
+  SELECT s.id, s.title, s.slug, s.category, s.did_you_know,
+         s.cover_image_url, s.cover_image_alt, s.cover_image_credit
+  FROM stories s
+  WHERE ${publicChild("s")}
+    AND s.did_you_know IS NOT NULL
+    AND btrim(s.did_you_know) <> ''
+    AND s.cover_image_url IS NOT NULL
+  ORDER BY md5(s.slug || CURRENT_DATE::text)
+  LIMIT 1;
 `;
 
 export const updateStoryQuery = `
@@ -58,8 +76,12 @@ export const updateStoryQuery = `
     excerpt = COALESCE($3, excerpt),
     content = COALESCE($4, content),
     cover_image_url = COALESCE($5, cover_image_url),
+    category = COALESCE($6, category),
+    did_you_know = COALESCE($7, did_you_know),
+    cover_image_alt = COALESCE($8, cover_image_alt),
+    cover_image_credit = COALESCE($9, cover_image_credit),
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $6
+  WHERE id = $10
   RETURNING *;
 `;
 

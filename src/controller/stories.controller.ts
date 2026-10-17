@@ -11,6 +11,7 @@ import {
   getStoryBySlugService,
   getAllStoriesBySectionService,
   getPublishedStoriesService,
+  getDidYouKnowStoryService,
 } from "../service/stories.service";
 import {
   updateStorySchema,
@@ -25,8 +26,18 @@ export const createStoryController = async (req: Request, res: Response) => {
       return sendResponse(res, 400, validation.error.issues[0].message);
     }
 
-    const { sectionId, title, slug, excerpt, content, coverImageUrl } =
-      validation.data;
+    const {
+      sectionId,
+      title,
+      slug,
+      excerpt,
+      content,
+      coverImageUrl,
+      category,
+      didYouKnow,
+      coverImageAlt,
+      coverImageCredit,
+    } = validation.data;
 
     const story = await createStoryService({
       sectionId,
@@ -35,6 +46,10 @@ export const createStoryController = async (req: Request, res: Response) => {
       excerpt,
       content,
       coverImageUrl,
+      category,
+      didYouKnow,
+      coverImageAlt,
+      coverImageCredit,
     });
 
     return sendResponse(res, 201, "Story created successfully", story);
@@ -207,6 +222,22 @@ export const getPublishedStoriesController = async (req: Request,res: Response,)
     const result = await getPublishedStoriesService();
 
     return sendResponse(res, 200, "Stories retrieved successfully", result);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+// The home page's "Did you know?" story. When there is none yet, this is still
+// a normal 200 with data: null, so the home page can quietly hide the section.
+export const getDidYouKnowStoryController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const result = await getDidYouKnowStoryService();
+
+    return sendResponse(res, 200, "Did you know story retrieved successfully", result);
   } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");

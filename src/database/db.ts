@@ -30,6 +30,7 @@ import {
   alterContentTablesAddStatus,
   lowercaseUserEmails,
   alterSourcesTableAddCoverImage,
+  alterStoriesAddDiscoveryFields,
 } from "./queries";
 
 dotenv.config();
@@ -109,6 +110,8 @@ export const createTables = async () => {
     console.log("user emails lowercased and unique");
     await client.query(alterSourcesTableAddCoverImage);
     console.log("Sources altered to add cover image");
+    await client.query(alterStoriesAddDiscoveryFields);
+    console.log("Stories altered for categories and did you know");
   } catch (error) {
     console.error("Error creating tables:", error);
     throw error;

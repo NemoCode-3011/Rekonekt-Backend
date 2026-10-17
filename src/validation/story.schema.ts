@@ -1,12 +1,27 @@
 import { z } from "zod";
 
+// The kinds of story. To add a new one, add it here and in the frontend's
+// features/stories/categories.ts (no database change is needed).
+export const STORY_CATEGORIES = [
+  "mythology",
+  "folklore",
+  "legend",
+  "oral-history",
+  "proverb",
+  "tradition",
+] as const;
+
+// These words are already used by story routes, so a story cannot use them as a slug.
+const RESERVED_SLUGS = ["did-you-know", "admin", "sections"];
+
 export const createStorySchema = z.object({
+  // Leave it out for a standalone story (mythology, folklore...) that
+  // does not belong to an exhibition chapter.
   sectionId: z
-    .number({
-      error: "Section ID is required",
-    })
+    .number()
     .int("Section ID must be an integer")
-    .positive("Section ID must be positive"),
+    .positive("Section ID must be positive")
+    .optional(),
 
   title: z
     .string({
@@ -24,7 +39,8 @@ export const createStorySchema = z.object({
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Slug must contain only lowercase letters, numbers, and hyphens",
-    ),
+    )
+    .refine((slug) => !RESERVED_SLUGS.includes(slug), "This slug is reserved"),
 
   excerpt: z.string().optional(),
 
@@ -35,6 +51,29 @@ export const createStorySchema = z.object({
     .min(1, "Content is required"),
 
   coverImageUrl: z.string().url("Invalid cover image URL").optional(),
+
+  category: z
+    .enum(STORY_CATEGORIES, {
+      error: `Category must be one of: ${STORY_CATEGORIES.join(", ")}`,
+    })
+    .optional(),
+
+  // One or two sentences pulled from the story. Shown on the home page.
+  didYouKnow: z
+    .string()
+    .min(10, "Did you know must be at least 10 characters")
+    .max(300, "Did you know must not exceed 300 characters")
+    .optional(),
+
+  coverImageAlt: z
+    .string()
+    .max(255, "Image description must not exceed 255 characters")
+    .optional(),
+
+  coverImageCredit: z
+    .string()
+    .max(500, "Image credit must not exceed 500 characters")
+    .optional(),
 });
 
 export const updateStorySchema = createStorySchema.omit({ sectionId: true }).partial();
