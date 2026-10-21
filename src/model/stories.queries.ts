@@ -56,6 +56,9 @@ export const getPublishedStoriesQuery = `
   ORDER BY s.published_at DESC;
 `;
 
+// One published story for the home page's "Did you know?" section.
+// It needs a snippet and a picture. The pick changes once a day, but
+// stays the same for everyone during that day.
 export const getDidYouKnowStoryQuery = `
   SELECT s.id, s.title, s.slug, s.category, s.did_you_know,
          s.cover_image_url, s.cover_image_alt, s.cover_image_credit
@@ -80,8 +83,11 @@ export const updateStoryQuery = `
     did_you_know = COALESCE($7, did_you_know),
     cover_image_alt = COALESCE($8, cover_image_alt),
     cover_image_credit = COALESCE($9, cover_image_credit),
+    -- $10 says whether to touch the chapter at all. $11 is the new chapter,
+    -- and NULL disconnects the story from its exhibition.
+    section_id = CASE WHEN $10::boolean THEN $11::int ELSE section_id END,
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $10
+  WHERE id = $12
   RETURNING *;
 `;
 
@@ -99,4 +105,30 @@ export const publishStoryQuery = `
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $1
   RETURNING *;
+`;
+
+// The admin list: every story, drafts included, with the exhibition and chapter
+// it is connected to (both are NULL for a standalone story).
+// $1 is an optional chapter, to list only that chapter's stories.
+export const getAdminStoriesQuery = `
+  SELECT s.*,
+         sec.title AS section_title,
+         e.id AS exhibition_id,
+         e.title AS exhibition_title
+  FROM stories s
+  LEFT JOIN sections sec ON sec.id = s.section_id
+  LEFT JOIN exhibitions e ON e.id = sec.exhibition_id
+  WHERE ($1::int IS NULL OR s.section_id = $1)
+  ORDER BY s.updated_at DESC, s.id DESC;
+`;
+
+export const getAdminStoryByIdQuery = `
+  SELECT s.*,
+         sec.title AS section_title,
+         e.id AS exhibition_id,
+         e.title AS exhibition_title
+  FROM stories s
+  LEFT JOIN sections sec ON sec.id = s.section_id
+  LEFT JOIN exhibitions e ON e.id = sec.exhibition_id
+  WHERE s.id = $1;
 `;

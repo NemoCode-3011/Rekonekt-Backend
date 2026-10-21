@@ -76,4 +76,16 @@ export const createStorySchema = z.object({
     .optional(),
 });
 
-export const updateStorySchema = createStorySchema.omit({ sectionId: true }).partial();
+export const updateStorySchema = createStorySchema
+  .omit({ sectionId: true })
+  .partial()
+  .extend({
+    // A number connects the story to an exhibition chapter.
+    // null disconnects it, which makes it a standalone story.
+    sectionId: z
+      .number()
+      .int("Section ID must be an integer")
+      .positive("Section ID must be positive")
+      .nullable()
+      .optional(),
+  });

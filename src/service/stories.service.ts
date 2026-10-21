@@ -10,6 +10,8 @@ import {
   getAllStoriesBySectionQuery,
   getPublishedStoriesQuery,
   getDidYouKnowStoryQuery,
+  getAdminStoriesQuery,
+  getAdminStoryByIdQuery,
 } from "../model/stories.queries";
 
 export const createStoryService = async (data: {
@@ -76,7 +78,9 @@ export const getAllStoriesBySectionService = async (sectionId: number) => {
 export const updateStoryService = async (
   id: number,
   data: {
-    sectionId?: number;
+    // A number connects the story to a chapter, null disconnects it,
+    // and leaving it out changes nothing.
+    sectionId?: number | null;
     title: string;
     slug: string;
     excerpt?: string;
@@ -99,6 +103,8 @@ export const updateStoryService = async (
       data.didYouKnow ?? null,
       data.coverImageAlt ?? null,
       data.coverImageCredit ?? null,
+      data.sectionId !== undefined,
+      data.sectionId ?? null,
       id,
     ]);
     if (result.rows.length === 0) {
@@ -160,4 +166,21 @@ export const getDidYouKnowStoryService = async () => {
   const result = await pool.query(getDidYouKnowStoryQuery);
 
   return result.rows[0] ?? null;
+};
+
+// Every story for the admin screens, drafts included.
+export const getAdminStoriesService = async (sectionId?: number) => {
+  const result = await pool.query(getAdminStoriesQuery, [sectionId ?? null]);
+
+  return result.rows;
+};
+
+export const getAdminStoryByIdService = async (id: number) => {
+  const result = await pool.query(getAdminStoryByIdQuery, [id]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Story not found");
+  }
+
+  return result.rows[0];
 };

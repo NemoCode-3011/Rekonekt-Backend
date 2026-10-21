@@ -12,6 +12,8 @@ import {
   getAllStoriesBySectionService,
   getPublishedStoriesService,
   getDidYouKnowStoryService,
+  getAdminStoriesService,
+  getAdminStoryByIdService,
 } from "../service/stories.service";
 import {
   updateStorySchema,
@@ -137,6 +139,10 @@ export const updateStoryController = async (req: Request, res: Response) => {
       return sendResponse(res, 409, error.message);
     }
 
+    if (error.message === "Section not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
@@ -217,7 +223,10 @@ export const getAdminStoriesBySectionController = async (
     return sendResponse(res, 500, "Internal server error");
   }
 };
-export const getPublishedStoriesController = async (req: Request,res: Response,) => {
+export const getPublishedStoriesController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const result = await getPublishedStoriesService();
 
@@ -237,8 +246,59 @@ export const getDidYouKnowStoryController = async (
   try {
     const result = await getDidYouKnowStoryService();
 
-    return sendResponse(res, 200, "Did you know story retrieved successfully", result);
+    return sendResponse(
+      res,
+      200,
+      "Did you know story retrieved successfully",
+      result,
+    );
   } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+// The admin list of stories, drafts included. ?sectionId= limits it to one chapter.
+export const getAdminStoriesController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const raw = req.query.sectionId;
+    const sectionId = raw === undefined ? undefined : Number(raw);
+
+    if (sectionId !== undefined && Number.isNaN(sectionId)) {
+      return sendResponse(res, 400, "Invalid section ID");
+    }
+
+    const result = await getAdminStoriesService(sectionId);
+
+    return sendResponse(res, 200, "Story list retrieved successfully", result);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminStoryByIdController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid story ID");
+    }
+
+    const result = await getAdminStoryByIdService(id);
+
+    return sendResponse(res, 200, "Story retrieved successfully", result);
+  } catch (error: any) {
+    if (error.message === "Story not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }

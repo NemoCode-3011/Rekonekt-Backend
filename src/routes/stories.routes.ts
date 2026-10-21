@@ -10,6 +10,8 @@ import {
   getStoryBySlugController,
   getPublishedStoriesController,
   getDidYouKnowStoryController,
+  getAdminStoriesController,
+  getAdminStoryByIdController,
 } from "../controller/stories.controller";
 import {
   optionalSession,
@@ -23,10 +25,11 @@ const router = Router();
 const admin = createAdminContentController("stories", "Story");
 
 router.get("/", optionalSession, getPublishedStoriesController);
+// Must stay above "/:slug", or "did-you-know" would be read as a story slug.
 router.get("/did-you-know", optionalSession, getDidYouKnowStoryController);
-router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
+router.get("/admin", verifyUser, requireRole("admin", "super admin"), getAdminStoriesController);
 router.get("/admin/sections/:sectionId", verifyUser, requireRole("admin", "super admin"), getAdminStoriesBySectionController);
-router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
+router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), getAdminStoryByIdController);
 router.get("/sections/:sectionId", optionalSession, getStoriesBySectionController);
 router.get("/:slug", optionalSession, getStoryBySlugController);
 
