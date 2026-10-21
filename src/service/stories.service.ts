@@ -25,6 +25,12 @@ export const createStoryService = async (data: {
   didYouKnow?: string;
   coverImageAlt?: string;
   coverImageCredit?: string;
+  didYouKnowImageUrl?: string;
+  didYouKnowImageAlt?: string;
+  didYouKnowImageCredit?: string;
+  bodyImageUrl?: string;
+  bodyImageAlt?: string;
+  bodyImageCredit?: string;
 }) => {
   try {
     const result = await pool.query(createStoryQuery, [
@@ -38,6 +44,12 @@ export const createStoryService = async (data: {
       data.didYouKnow ?? null,
       data.coverImageAlt ?? null,
       data.coverImageCredit ?? null,
+      data.didYouKnowImageUrl ?? null,
+      data.didYouKnowImageAlt ?? null,
+      data.didYouKnowImageCredit ?? null,
+      data.bodyImageUrl ?? null,
+      data.bodyImageAlt ?? null,
+      data.bodyImageCredit ?? null,
     ]);
 
     return result.rows[0];
@@ -90,6 +102,12 @@ export const updateStoryService = async (
     didYouKnow?: string;
     coverImageAlt?: string;
     coverImageCredit?: string;
+    didYouKnowImageUrl?: string;
+    didYouKnowImageAlt?: string;
+    didYouKnowImageCredit?: string;
+    bodyImageUrl?: string;
+    bodyImageAlt?: string;
+    bodyImageCredit?: string;
   },
 ) => {
   try {
@@ -106,6 +124,12 @@ export const updateStoryService = async (
       data.sectionId !== undefined,
       data.sectionId ?? null,
       id,
+      data.didYouKnowImageUrl ?? null,
+      data.didYouKnowImageAlt ?? null,
+      data.didYouKnowImageCredit ?? null,
+      data.bodyImageUrl ?? null,
+      data.bodyImageAlt ?? null,
+      data.bodyImageCredit ?? null,
     ]);
     if (result.rows.length === 0) {
       throw new Error("Story not found");

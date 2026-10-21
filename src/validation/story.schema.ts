@@ -74,6 +74,29 @@ export const createStorySchema = z.object({
     .string()
     .max(500, "Image credit must not exceed 500 characters")
     .optional(),
+      // Second picture: the tall one for the home page's "Did you know?" section.
+  didYouKnowImageUrl: z.string().url("Invalid image URL").optional(),
+  
+  didYouKnowImageAlt: z
+    .string()
+    .max(255, "Image description must not exceed 255 characters")
+    .optional(),
+
+  didYouKnowImageCredit: z
+    .string()
+    .max(500, "Image credit must not exceed 500 characters")
+    .optional(),
+
+  // Third picture: shown inside the story.
+  bodyImageUrl: z.string().url("Invalid image URL").optional(),
+  bodyImageAlt: z
+    .string()
+    .max(255, "Image description must not exceed 255 characters")
+    .optional(),
+  bodyImageCredit: z
+    .string()
+    .max(500, "Image credit must not exceed 500 characters")
+    .optional(),
 });
 
 export const updateStorySchema = createStorySchema

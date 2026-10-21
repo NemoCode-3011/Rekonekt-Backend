@@ -12,9 +12,15 @@ export const createStoryQuery = `
     did_you_know,
     cover_image_alt,
     cover_image_credit,
+    did_you_know_image_url,
+    did_you_know_image_alt,
+    did_you_know_image_credit,
+    body_image_url,
+    body_image_alt,
+    body_image_credit,
     status
   )
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'draft')
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'draft')
   RETURNING *;
 `;
 
@@ -25,10 +31,10 @@ export const getStoriesBySectionQuery = `
     AND ${publicChild("s")}
   ORDER BY s.created_at ASC;
 `;
-
 export const getStoryBySlugQuery = `
   SELECT s.id, s.section_id, s.title, s.slug, s.excerpt, s.content,
          s.cover_image_url, s.cover_image_alt, s.cover_image_credit,
+         s.body_image_url, s.body_image_alt, s.body_image_credit,
          s.category, s.did_you_know, s.published_at
   FROM stories s
   WHERE s.slug = $1
@@ -56,17 +62,23 @@ export const getPublishedStoriesQuery = `
   ORDER BY s.published_at DESC;
 `;
 
-// One published story for the home page's "Did you know?" section.
-// It needs a snippet and a picture. The pick changes once a day, but
-// stays the same for everyone during that day.
 export const getDidYouKnowStoryQuery = `
   SELECT s.id, s.title, s.slug, s.category, s.did_you_know,
-         s.cover_image_url, s.cover_image_alt, s.cover_image_credit
+         COALESCE(NULLIF(btrim(s.did_you_know_image_url), ''), s.cover_image_url)
+           AS cover_image_url,
+         CASE WHEN NULLIF(btrim(s.did_you_know_image_url), '') IS NOT NULL
+              THEN s.did_you_know_image_alt
+              ELSE s.cover_image_alt END
+           AS cover_image_alt,
+         CASE WHEN NULLIF(btrim(s.did_you_know_image_url), '') IS NOT NULL
+              THEN s.did_you_know_image_credit
+              ELSE s.cover_image_credit END
+           AS cover_image_credit
   FROM stories s
   WHERE ${publicChild("s")}
     AND s.did_you_know IS NOT NULL
     AND btrim(s.did_you_know) <> ''
-    AND s.cover_image_url IS NOT NULL
+    AND COALESCE(NULLIF(btrim(s.did_you_know_image_url), ''), s.cover_image_url) IS NOT NULL
   ORDER BY md5(s.slug || CURRENT_DATE::text)
   LIMIT 1;
 `;
@@ -83,6 +95,12 @@ export const updateStoryQuery = `
     did_you_know = COALESCE($7, did_you_know),
     cover_image_alt = COALESCE($8, cover_image_alt),
     cover_image_credit = COALESCE($9, cover_image_credit),
+    did_you_know_image_url = COALESCE($13, did_you_know_image_url),
+    did_you_know_image_alt = COALESCE($14, did_you_know_image_alt),
+    did_you_know_image_credit = COALESCE($15, did_you_know_image_credit),
+    body_image_url = COALESCE($16, body_image_url),
+    body_image_alt = COALESCE($17, body_image_alt),
+    body_image_credit = COALESCE($18, body_image_credit),
     -- $10 says whether to touch the chapter at all. $11 is the new chapter,
     -- and NULL disconnects the story from its exhibition.
     section_id = CASE WHEN $10::boolean THEN $11::int ELSE section_id END,

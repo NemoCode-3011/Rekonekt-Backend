@@ -295,3 +295,13 @@ export const alterStoriesAddDiscoveryFields = `
     ADD COLUMN IF NOT EXISTS cover_image_alt VARCHAR(255),
     ADD COLUMN IF NOT EXISTS cover_image_credit TEXT;
 `;
+
+export const alterStoriesAddExtraImages = `
+  ALTER TABLE stories
+    ADD COLUMN IF NOT EXISTS did_you_know_image_url VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS did_you_know_image_alt VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS did_you_know_image_credit TEXT,
+    ADD COLUMN IF NOT EXISTS body_image_url VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS body_image_alt VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS body_image_credit TEXT;
+`;

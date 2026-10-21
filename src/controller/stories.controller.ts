@@ -39,6 +39,12 @@ export const createStoryController = async (req: Request, res: Response) => {
       didYouKnow,
       coverImageAlt,
       coverImageCredit,
+      didYouKnowImageUrl,
+      didYouKnowImageAlt,
+      didYouKnowImageCredit,
+      bodyImageUrl,
+      bodyImageAlt,
+      bodyImageCredit,
     } = validation.data;
 
     const story = await createStoryService({
@@ -52,6 +58,12 @@ export const createStoryController = async (req: Request, res: Response) => {
       didYouKnow,
       coverImageAlt,
       coverImageCredit,
+      didYouKnowImageUrl,
+      didYouKnowImageAlt,
+      didYouKnowImageCredit,
+      bodyImageUrl,
+      bodyImageAlt,
+      bodyImageCredit,
     });
 
     return sendResponse(res, 201, "Story created successfully", story);
