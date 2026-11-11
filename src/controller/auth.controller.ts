@@ -31,6 +31,7 @@ import {
   sessionCookieOptions,
   clearSessionCookieOptions,
 } from "../utils/cookies";
+import { OTP_COOLDOWN_MESSAGE } from "../service/auth.service";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
@@ -52,8 +53,8 @@ export const signUpController = async (req: Request, res: Response) => {
     return sendResponse(res, 201, "User created successfully", user);
   } catch (error: any) {
     console.log(error.message || error);
-    if (error.message === "Email already exists") {
-      return sendResponse(res, 409, "Email already exists");
+    if (error.message === OTP_COOLDOWN_MESSAGE) {
+      return sendResponse(res, 429, error.message);
     }
     return sendResponse(res, 500, "Internal server error");
   }
@@ -223,6 +224,9 @@ export const resendOtpController = async (req: Request, res: Response) => {
     return sendResponse(res, 200, "Verification OTP sent successfully", result);
   } catch (error: any) {
     console.log(error.message || error);
+    if (error.message === OTP_COOLDOWN_MESSAGE) {
+      return sendResponse(res, 429, error.message);
+    }
 
     return sendResponse(res, 400, error.message || "Failed to resend OTP");
   }
@@ -241,6 +245,9 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "Password reset OTP sent successfully");
   } catch (error: any) {
+    if (error.message === OTP_COOLDOWN_MESSAGE) {
+      return sendResponse(res, 429, error.message);
+    }
     return sendResponse(res, 400, error.message || "Failed to send reset OTP");
   }
 };

@@ -25,6 +25,9 @@ import { deleteUserSessions } from "../utils/sessions";
 
 const OTP_TTL_SECONDS = 300;
 const MAX_OTP_ATTEMPTS = 5;
+const OTP_COOLDOWN_SECONDS = 60;
+export const OTP_COOLDOWN_MESSAGE =
+  "Please wait a minute before asking for another code";
 // One place that decides what "the same email" means.
 const cleanEmail = (email: string) => email.trim().toLowerCase();
 
@@ -55,11 +58,25 @@ const checkOtp = async (purpose: OtpPurpose, email: string, otp: string) => {
   }
 
   const storedOtp = await redisClient.get(codeKey(purpose, email));
-  return storedOtp !== null && storedOtp === otp;
+  if (storedOtp === null || storedOtp !== otp) return false;
+
+  // del() returns 1 for only one of two simultaneous requests,
+  // so a code works exactly once.
+  return (await redisClient.del(codeKey(purpose, email))) === 1;
 };
 
 const clearOtp = async (purpose: OtpPurpose, email: string) => {
   await redisClient.del([codeKey(purpose, email), attemptsKey(purpose, email)]);
+};
+
+// Allows one code per email per minute.
+const requireOtpCooldown = async (purpose: OtpPurpose, email: string) => {
+  const result = await redisClient.set(`${purpose}-cooldown:${email}`, "1", {
+    NX: true,
+    EX: OTP_COOLDOWN_SECONDS,
+  });
+
+  if (result !== "OK") throw new Error(OTP_COOLDOWN_MESSAGE);
 };
 
 interface SignUpInput {
@@ -71,6 +88,7 @@ interface SignUpInput {
 
 export const signUpService = async (data: SignUpInput) => {
   const email = cleanEmail(data.email);
+  await requireOtpCooldown("otp", email);
   const name = data.name.trim();
   const language = data.preferredLanguage ?? "en";
   const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -288,6 +306,7 @@ export const setupAdminPasswordService = async (
 
 export const resendOtpService = async (rawEmail: string) => {
   const email = cleanEmail(rawEmail);
+  await requireOtpCooldown("otp", email);
   const result = await pool.query(getUserForResendOtpQuery, [email]);
 
   const user = result.rows[0];
@@ -306,6 +325,7 @@ export const resendOtpService = async (rawEmail: string) => {
 
 export const forgotPasswordService = async (rawEmail: string) => {
   const email = cleanEmail(rawEmail);
+  await requireOtpCooldown("password-reset", email);
   const result = await pool.query(getUserByEmail, [email]);
 
   const user = result.rows[0];

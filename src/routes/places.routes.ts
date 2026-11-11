@@ -10,7 +10,6 @@ import {
   optionalSession,
   verifyUser,
 } from "src/middleware/auth.middleware";
-import { requireSuperAdmin } from "src/middleware/role.middleware";
 import { requireRole } from "@middleware/authorize";
 import { createAdminContentController } from "src/controller/adminContent.controller";
 
