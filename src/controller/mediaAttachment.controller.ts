@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   createMediaAttachmentService,
+  getAdminEventMedia,
   getMediaAttachments,
   getMediaAttachmentById,
   updateMediaAttachment,
@@ -62,8 +63,31 @@ export const createMediaAttachmentController = async (
   }
 };
 
-export const getMediaAttachmentsController = async (
+export const getAdminEventMediaController = async (
   req: Request,
+  res: Response,
+) => {
+  const eventId = Number(req.params.eventId);
+
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    return sendResponse(res, 400, "Invalid event ID");
+  }
+
+  try {
+    const media = await getAdminEventMedia(eventId);
+    return sendResponse(res, 200, "Event media retrieved successfully", media);
+  } catch (error: any) {
+    if (error.message === "Event not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getMediaAttachmentsController = async (
+  _req: Request,
   res: Response,
 ) => {
   try {

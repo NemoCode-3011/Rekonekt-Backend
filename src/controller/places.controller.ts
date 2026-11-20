@@ -35,7 +35,7 @@ export const createPlaceController = async (req: Request, res: Response) => {
     return sendResponse(res, 500, "Internal server error");
   }
 };
-export const getPlacesController = async (req: Request, res: Response) => {
+export const getPlacesController = async (_req: Request, res: Response) => {
   try {
     const places = await getPlaces();
 

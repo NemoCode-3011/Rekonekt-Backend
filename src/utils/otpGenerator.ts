@@ -1,5 +1,4 @@
- import crypto from "crypto"
+import { randomInt } from "node:crypto";
 
- export const otpGenerator = (length = 6): string =>{
-  return crypto.randomInt(0, 10 ** length).toString().padStart(length, "0")
- }
+export const otpGenerator = (length = 6): string =>
+  randomInt(0, 10 ** length).toString().padStart(length, "0");

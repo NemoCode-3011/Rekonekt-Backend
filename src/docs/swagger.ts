@@ -153,6 +153,8 @@ const options = {
         post: {
           tags: ["Authentication"],
           summary: "Create a visitor account",
+          description:
+            "An existing unverified account keeps its current credentials and can receive another verification code after the cooldown. A verified account returns 409.",
           requestBody: {
             required: true,
             content: {
@@ -190,6 +192,7 @@ const options = {
             409: {
               description: "Email already exists",
             },
+            429: { description: "Too many signup attempts from this IP" },
           },
         },
       },
@@ -226,6 +229,9 @@ const options = {
             },
             400: {
               description: "Invalid OTP or input",
+            },
+            429: {
+              description: "Too many OTP verification attempts",
             },
           },
         },
@@ -327,6 +333,10 @@ const options = {
             400: {
               description: "Invalid request",
             },
+            429: {
+              description:
+                "Verification resend cooldown or too many requests from this IP",
+            },
           },
         },
       },
@@ -355,8 +365,10 @@ const options = {
           },
           responses: {
             200: {
-              description: "Password reset OTP sent",
+              description:
+                "Password reset request accepted. The email is purpose-specific; unknown emails receive the same response.",
             },
+            429: { description: "Too many password recovery attempts" },
           },
         },
       },
@@ -396,6 +408,8 @@ const options = {
             200: {
               description: "Password reset successfully",
             },
+            400: { description: "Invalid or expired reset code" },
+            429: { description: "Too many password reset attempts" },
           },
         },
       },
@@ -632,7 +646,9 @@ const options = {
         },
         post: {
           tags: ["Stories"],
-          summary: "Create a story",
+          summary: "Create a story, optionally in a section",
+          description:
+            "Omit sectionId to create a standalone story. If supplied, sectionId must be a positive integer.",
           security: [{ sessionCookie: [] }],
           responses: {
             201: { description: "Story created successfully" },
@@ -674,6 +690,8 @@ const options = {
         patch: {
           tags: ["Stories"],
           summary: "Update story",
+          description:
+            "Omit sectionId to keep the current section. Set sectionId to null to make the story standalone.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -753,7 +771,9 @@ const options = {
         },
         post: {
           tags: ["Events"],
-          summary: "Create an event",
+          summary: "Create an event, optionally in a section",
+          description:
+            "Create an event independently by omitting sectionId or setting it to null, or include a positive integer sectionId to place it in an exhibition section.",
           security: [{ sessionCookie: [] }],
           responses: {
             201: { description: "Event created successfully" },
@@ -799,7 +819,9 @@ const options = {
         },
         patch: {
           tags: ["Events"],
-          summary: "Update event",
+          summary: "Update an event or its section relationship",
+          description:
+            "Omit sectionId to leave the existing relationship unchanged. Set sectionId to null to make the event standalone.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -971,10 +993,46 @@ const options = {
           },
         },
       },
+      "/admin/events/{eventId}/people": {
+        get: {
+          tags: ["Event Relationships"],
+          summary: "Get all people linked to an event, including drafts (admin)",
+          description:
+            "Returns complete person records for the event, including draft people, even when the event itself is a draft. An existing event with no linked people returns an empty data array.",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "eventId",
+              in: "path",
+              required: true,
+              schema: { type: "integer", minimum: 1 },
+            },
+          ],
+          responses: {
+            200: {
+              description: "Linked people retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/PeopleResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidId" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/EventNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
+          },
+        },
+      },
       "/events/{eventId}/people": {
         post: {
           tags: ["Event Relationships"],
           summary: "Link a person to an event",
+          description:
+            "The JSON request uses personId in camelCase. The returned relationship row uses event_id and person_id in snake_case.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -984,15 +1042,40 @@ const options = {
               schema: { type: "integer" },
             },
           ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/LinkEventPersonRequest",
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: "Person linked to event" },
-            409: { description: "Relationship already exists" },
+            201: {
+              description: "Person linked to event",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/EventPersonLinkResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidRelationshipInput" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/ReferencedResourceNotFound" },
+            409: { $ref: "#/components/responses/RelationshipAlreadyExists" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
         get: {
           tags: ["Event Relationships"],
           summary: "Get people linked to an event",
-          security: [{ sessionCookie: [] }],
+          description:
+            "Returns published people only when the event is publicly visible. The data array contains complete person records.",
           parameters: [
             {
               name: "eventId",
@@ -1002,7 +1085,16 @@ const options = {
             },
           ],
           responses: {
-            200: { description: "People retrieved successfully" },
+            200: {
+              description: "People retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/PeopleResponse",
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -1011,6 +1103,8 @@ const options = {
         delete: {
           tags: ["Event Relationships"],
           summary: "Remove a person from an event",
+          description:
+            "Deletes the relationship only; it does not delete the person or event.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1027,7 +1121,55 @@ const options = {
             },
           ],
           responses: {
-            200: { description: "Person removed from event" },
+            200: {
+              description: "Person removed from event",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/EventPersonLinkResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidId" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/RelationshipNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
+          },
+        },
+      },
+      "/admin/events/{eventId}/places": {
+        get: {
+          tags: ["Event Relationships"],
+          summary: "Get all places linked to an event, including drafts (admin)",
+          description:
+            "Returns complete place records for the event, including draft places, even when the event itself is a draft. An existing event with no linked places returns an empty data array.",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "eventId",
+              in: "path",
+              required: true,
+              schema: { type: "integer", minimum: 1 },
+            },
+          ],
+          responses: {
+            200: {
+              description: "Linked places retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/PlacesResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidId" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/EventNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
       },
@@ -1035,6 +1177,8 @@ const options = {
         post: {
           tags: ["Event Relationships"],
           summary: "Link a place to an event",
+          description:
+            "The JSON request uses placeId in camelCase. The returned relationship row uses event_id and place_id in snake_case.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1044,15 +1188,40 @@ const options = {
               schema: { type: "integer" },
             },
           ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/LinkEventPlaceRequest",
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: "Place linked to event" },
-            409: { description: "Relationship already exists" },
+            201: {
+              description: "Place linked to event",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/EventPlaceLinkResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidRelationshipInput" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/ReferencedResourceNotFound" },
+            409: { $ref: "#/components/responses/RelationshipAlreadyExists" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
         get: {
           tags: ["Event Relationships"],
           summary: "Get places linked to an event",
-          security: [{ sessionCookie: [] }],
+          description:
+            "Returns published places only when the event is publicly visible. The data array contains complete place records.",
           parameters: [
             {
               name: "eventId",
@@ -1062,7 +1231,16 @@ const options = {
             },
           ],
           responses: {
-            200: { description: "Places retrieved successfully" },
+            200: {
+              description: "Places retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/PlacesResponse",
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -1071,6 +1249,8 @@ const options = {
         delete: {
           tags: ["Event Relationships"],
           summary: "Remove a place from an event",
+          description:
+            "Deletes the relationship only; it does not delete the place or event.",
           security: [{ sessionCookie: [] }],
           parameters: [
             {
@@ -1087,7 +1267,21 @@ const options = {
             },
           ],
           responses: {
-            200: { description: "Place removed from event" },
+            200: {
+              description: "Place removed from event",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/EventPlaceLinkResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidId" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/RelationshipNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
       },
@@ -1206,8 +1400,25 @@ const options = {
           tags: ["Media"],
           summary: "Create media record",
           security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/CreateMediaRequest",
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: "Media created successfully" },
+            201: {
+              description: "Media created successfully",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/MediaResponse" },
+                },
+              },
+            },
           },
         },
         get: {
@@ -1215,7 +1426,90 @@ const options = {
           summary: "Get all media",
           security: [{ sessionCookie: [] }],
           responses: {
-            200: { description: "Media retrieved successfully" },
+            200: {
+              description: "Media retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/MediaListResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      "/media/youtube": {
+        post: {
+          tags: ["Media"],
+          summary: "Add a YouTube video",
+          description:
+            "Validates supported YouTube watch, short, shorts, live, and embed URLs. Stores the canonical watch URL as a video media record and returns a privacy-enhanced embed URL.",
+          security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/CreateYouTubeMediaRequest",
+                },
+              },
+            },
+          },
+          responses: {
+            201: {
+              description: "YouTube video added successfully",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/MediaResponse" },
+                },
+              },
+            },
+            400: {
+              description: "Invalid request or unsupported YouTube URL.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            500: { $ref: "#/components/responses/InternalServerError" },
+          },
+        },
+      },
+
+      "/admin/events/{eventId}/media": {
+        get: {
+          tags: ["Media"],
+          summary: "Get media attached to an event, including drafts (admin)",
+          description:
+            "Returns attached media records for draft or published events, including YouTube embed metadata. An existing event with no media returns an empty data array. attachment_id identifies the relationship for deletion.",
+          security: [{ sessionCookie: [] }],
+          parameters: [
+            {
+              name: "eventId",
+              in: "path",
+              required: true,
+              schema: { type: "integer", minimum: 1 },
+            },
+          ],
+          responses: {
+            200: {
+              description: "Event media retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/EventMediaListResponse",
+                  },
+                },
+              },
+            },
+            400: { $ref: "#/components/responses/InvalidId" },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/EventNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
       },
@@ -1223,7 +1517,9 @@ const options = {
       "/media/upload": {
         post: {
           tags: ["Media"],
-          summary: "Upload media file",
+          summary: "Upload an image, document, audio, or video file",
+          description:
+            "Uploads to R2. MP4 and WebM are accepted for video; the maximum file size is 10 MB. mediaType is inferred from the file MIME type and must not be sent.",
           security: [{ sessionCookie: [] }],
           requestBody: {
             required: true,
@@ -1231,7 +1527,7 @@ const options = {
               "multipart/form-data": {
                 schema: {
                   type: "object",
-                  required: ["file", "title", "mediaType"],
+                  required: ["file", "title"],
                   properties: {
                     file: {
                       type: "string",
@@ -1240,17 +1536,37 @@ const options = {
                     title: {
                       type: "string",
                     },
-                    mediaType: {
+                    caption: {
                       type: "string",
                     },
+                    description: { type: "string" },
+                    sourceCredit: { type: "string" },
+                    license: { type: "string" },
                   },
                 },
               },
             },
           },
           responses: {
-            201: { description: "Media uploaded successfully" },
-            400: { description: "Invalid upload" },
+            201: {
+              description: "Media uploaded successfully",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/MediaResponse" },
+                },
+              },
+            },
+            400: {
+              description: "Invalid upload or unsupported file type.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
       },
@@ -1269,7 +1585,14 @@ const options = {
             },
           ],
           responses: {
-            200: { description: "Media retrieved successfully" },
+            200: {
+              description: "Media retrieved successfully",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/MediaResponse" },
+                },
+              },
+            },
           },
         },
         patch: {
@@ -1309,9 +1632,42 @@ const options = {
         post: {
           tags: ["Media Attachments"],
           summary: "Create a media attachment",
+          description:
+            "Attach a media record to an event or another content record. For an event, send mediaId and eventId; eventId is optional when attaching to other supported content.",
           security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/CreateMediaAttachmentRequest",
+                },
+              },
+            },
+          },
           responses: {
-            201: { description: "Media attachment created successfully" },
+            201: {
+              description: "Media attachment created successfully",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/MediaAttachmentResponse",
+                  },
+                },
+              },
+            },
+            400: {
+              description: "Invalid media or content ID.",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            401: { $ref: "#/components/responses/AuthenticationRequired" },
+            403: { $ref: "#/components/responses/AccessDenied" },
+            404: { $ref: "#/components/responses/ReferencedResourceNotFound" },
+            500: { $ref: "#/components/responses/InternalServerError" },
           },
         },
         get: {
@@ -1920,6 +2276,336 @@ const options = {
           type: "apiKey",
           in: "cookie",
           name: "sessionId",
+        },
+      },
+      schemas: {
+        ErrorResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: { type: "object", nullable: true, description: "Null for errors." },
+          },
+        },
+        PersonRecord: {
+          type: "object",
+          description: "Person record returned with database column names in snake_case.",
+          properties: {
+            id: { type: "integer" },
+            name: { type: "string" },
+            slug: { type: "string" },
+            description: { type: "string", nullable: true },
+            birth_date: { type: "string", format: "date", nullable: true },
+            death_date: { type: "string", format: "date", nullable: true },
+            status: { type: "string", enum: ["draft", "published", "archived"] },
+            published_at: { type: "string", format: "date-time", nullable: true },
+            created_at: { type: "string", format: "date-time" },
+            updated_at: { type: "string", format: "date-time" },
+          },
+        },
+        PlaceRecord: {
+          type: "object",
+          description: "Place record returned with database column names in snake_case.",
+          properties: {
+            id: { type: "integer" },
+            name: { type: "string" },
+            description: { type: "string", nullable: true },
+            latitude: {
+              type: "string",
+              nullable: true,
+              description: "Decimal coordinate serialized by PostgreSQL as a string.",
+            },
+            longitude: {
+              type: "string",
+              nullable: true,
+              description: "Decimal coordinate serialized by PostgreSQL as a string.",
+            },
+            status: { type: "string", enum: ["draft", "published", "archived"] },
+            published_at: { type: "string", format: "date-time", nullable: true },
+            created_at: { type: "string", format: "date-time" },
+            updated_at: { type: "string", format: "date-time" },
+          },
+        },
+        PeopleResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: {
+              type: "array",
+              items: { $ref: "#/components/schemas/PersonRecord" },
+            },
+          },
+        },
+        PlacesResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: {
+              type: "array",
+              items: { $ref: "#/components/schemas/PlaceRecord" },
+            },
+          },
+        },
+        LinkEventPersonRequest: {
+          type: "object",
+          required: ["personId"],
+          properties: {
+            personId: { type: "integer", minimum: 1 },
+          },
+        },
+        LinkEventPlaceRequest: {
+          type: "object",
+          required: ["placeId"],
+          properties: {
+            placeId: { type: "integer", minimum: 1 },
+          },
+        },
+        EventPersonLink: {
+          type: "object",
+          required: ["event_id", "person_id"],
+          properties: {
+            event_id: { type: "integer" },
+            person_id: { type: "integer" },
+          },
+        },
+        EventPlaceLink: {
+          type: "object",
+          required: ["event_id", "place_id"],
+          properties: {
+            event_id: { type: "integer" },
+            place_id: { type: "integer" },
+          },
+        },
+        EventPersonLinkResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: { $ref: "#/components/schemas/EventPersonLink" },
+          },
+        },
+        EventPlaceLinkResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: { $ref: "#/components/schemas/EventPlaceLink" },
+          },
+        },
+        CreateMediaRequest: {
+          type: "object",
+          required: ["title", "mediaType", "fileUrl"],
+          properties: {
+            title: { type: "string" },
+            mediaType: {
+              type: "string",
+              enum: ["image", "document", "audio", "video"],
+            },
+            fileUrl: { type: "string", format: "uri" },
+            caption: { type: "string" },
+            description: { type: "string" },
+            sourceCredit: { type: "string" },
+            license: { type: "string" },
+          },
+        },
+        CreateYouTubeMediaRequest: {
+          type: "object",
+          required: ["title", "youtubeUrl"],
+          properties: {
+            title: { type: "string", minLength: 2, maxLength: 255 },
+            youtubeUrl: {
+              type: "string",
+              format: "uri",
+              description:
+                "YouTube watch, youtu.be, shorts, live, or embed URL.",
+            },
+            caption: { type: "string" },
+            description: { type: "string" },
+            sourceCredit: { type: "string", maxLength: 500 },
+            license: { type: "string", maxLength: 255 },
+          },
+        },
+        MediaRecord: {
+          type: "object",
+          description:
+            "Media fields use snake_case. For uploaded video files, embed_url is null and file_url is the video URL; for YouTube videos, video_provider is youtube and embed_url is a privacy-enhanced embed URL.",
+          properties: {
+            id: { type: "integer" },
+            title: { type: "string" },
+            media_type: {
+              type: "string",
+              enum: ["image", "document", "audio", "video"],
+            },
+            file_url: { type: "string", format: "uri" },
+            caption: { type: "string", nullable: true },
+            description: { type: "string", nullable: true },
+            source_credit: { type: "string", nullable: true },
+            license: { type: "string", nullable: true },
+            video_provider: {
+              type: "string",
+              enum: ["youtube"],
+              nullable: true,
+            },
+            embed_url: { type: "string", format: "uri", nullable: true },
+            created_at: { type: "string", format: "date-time" },
+            updated_at: { type: "string", format: "date-time" },
+          },
+        },
+        MediaResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: { $ref: "#/components/schemas/MediaRecord" },
+          },
+        },
+        MediaListResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: {
+              type: "array",
+              items: { $ref: "#/components/schemas/MediaRecord" },
+            },
+          },
+        },
+        EventMediaRecord: {
+          allOf: [
+            { $ref: "#/components/schemas/MediaRecord" },
+            {
+              type: "object",
+              required: ["attachment_id", "display_order"],
+              properties: {
+                attachment_id: { type: "integer" },
+                display_order: { type: "integer" },
+              },
+            },
+          ],
+        },
+        EventMediaListResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: {
+              type: "array",
+              items: { $ref: "#/components/schemas/EventMediaRecord" },
+            },
+          },
+        },
+        CreateMediaAttachmentRequest: {
+          type: "object",
+          required: ["mediaId"],
+          properties: {
+            mediaId: { type: "integer", minimum: 1 },
+            exhibitionId: { type: "integer", minimum: 1 },
+            sectionId: { type: "integer", minimum: 1 },
+            eventId: { type: "integer", minimum: 1 },
+            personId: { type: "integer", minimum: 1 },
+            placeId: { type: "integer", minimum: 1 },
+            artifactId: { type: "integer", minimum: 1 },
+            displayOrder: { type: "integer", minimum: 0, default: 0 },
+          },
+        },
+        MediaAttachmentRecord: {
+          type: "object",
+          properties: {
+            id: { type: "integer" },
+            media_id: { type: "integer" },
+            exhibition_id: { type: "integer", nullable: true },
+            section_id: { type: "integer", nullable: true },
+            event_id: { type: "integer", nullable: true },
+            person_id: { type: "integer", nullable: true },
+            place_id: { type: "integer", nullable: true },
+            artifact_id: { type: "integer", nullable: true },
+            display_order: { type: "integer" },
+            created_at: { type: "string", format: "date-time" },
+          },
+        },
+        MediaAttachmentResponse: {
+          type: "object",
+          required: ["message", "data"],
+          properties: {
+            message: { type: "string" },
+            data: { $ref: "#/components/schemas/MediaAttachmentRecord" },
+          },
+        },
+      },
+      responses: {
+        InvalidId: {
+          description: "Path ID must be a positive integer.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        InvalidRelationshipInput: {
+          description: "Request body contains an invalid relationship ID.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        AuthenticationRequired: {
+          description: "Authentication is required.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        AccessDenied: {
+          description: "The authenticated user does not have an admin role.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        EventNotFound: {
+          description: "No event exists with the supplied ID.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        ReferencedResourceNotFound: {
+          description: "The event or person/place does not exist.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        RelationshipAlreadyExists: {
+          description: "The relationship already exists.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        RelationshipNotFound: {
+          description: "The event-person or event-place relationship does not exist.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
+        },
+        InternalServerError: {
+          description: "Unexpected server error.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ErrorResponse" },
+            },
+          },
         },
       },
     },

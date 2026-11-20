@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createMediaController,
+  createYouTubeMediaController,
   getMediaController,
   getMediaByIdController,
   updateMediaController,
@@ -15,6 +16,13 @@ import { uploadMediaFile } from "@middleware/upload.middleware";
 import { requireRole } from "@middleware/authorize";
 
 const router = Router();
+
+router.post(
+  "/youtube",
+  verifyUser,
+  requireRole("admin", "super admin"),
+  createYouTubeMediaController,
+);
 
 router.post("/", verifyUser, requireRole("admin", "super admin"), createMediaController);
 

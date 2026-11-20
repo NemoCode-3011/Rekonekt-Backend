@@ -1,37 +1,20 @@
 import { Router } from "express";
-
 import {
-  createStoryController,
-  getStoriesBySectionController,
-  getAdminStoriesBySectionController,
-  updateStoryController,
-  deleteStoryController,
-  publishStoryController,
-  getStoryBySlugController,
-  getPublishedStoriesController
-} from "../controller/stories.controller";
-import {
-  optionalSession,
-  verifyUser,
-} from "src/middleware/auth.middleware";
+  createSourceController,
+  deleteSourceController,
+  getSourceByIdController,
+  getSourcesController,
+  updateSourceController,
+} from "src/controller/source.controller";
 import { requireRole } from "@middleware/authorize";
-import { createAdminContentController } from "src/controller/adminContent.controller";
+import { optionalSession, verifyUser } from "src/middleware/auth.middleware";
 
 const router = Router();
 
-const admin = createAdminContentController("stories", "Story");
-
-router.get("/", optionalSession, getPublishedStoriesController);
-router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
-router.get("/admin/sections/:sectionId", verifyUser, requireRole("admin", "super admin"), getAdminStoriesBySectionController);
-router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
-router.get("/sections/:sectionId", optionalSession, getStoriesBySectionController);
-router.get("/:slug", optionalSession, getStoryBySlugController);
-
-router.post("/", verifyUser, requireRole("admin", "super admin"), createStoryController);
-router.patch("/:id/publish", verifyUser, requireRole("admin", "super admin"), publishStoryController);
-router.patch("/:id/unpublish", verifyUser, requireRole("admin", "super admin"), admin.unpublish);
-router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateStoryController);
-router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deleteStoryController);
+router.get("/", optionalSession, getSourcesController);
+router.get("/:id", optionalSession, getSourceByIdController);
+router.post("/", verifyUser, requireRole("admin", "super admin"), createSourceController);
+router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateSourceController);
+router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deleteSourceController);
 
 export default router;

@@ -2,12 +2,13 @@ import { SESSION_TTL_SECONDS } from "./sessions";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const sameSite = process.env.CROSS_SITE_COOKIES === "true" ? "none" : "lax";
+const sameSite: "none" | "lax" =
+  process.env.CROSS_SITE_COOKIES === "true" ? "none" : "lax";
 
 const baseOptions = {
   httpOnly: true,
   secure: isProduction || sameSite === "none",
-  sameSite: sameSite as "none" | "lax",
+  sameSite,
 };
 
 export const sessionCookieOptions = {

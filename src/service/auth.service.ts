@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { createHash, randomBytes } from "node:crypto";
 import { pool } from "../database/db";
 import { redisClient } from "../config/redis";
@@ -7,6 +6,7 @@ import {
   createUserQuery,
   getUserByEmail,
   getUserById,
+  getUserForResendOtpQuery,
   updateUserPasswordQuery,
   updateUserVerifiedQuery,
   updateUserProfileQuery,
@@ -15,13 +15,11 @@ import {
   getAdminsQuery,
   revokeAdminQuery,
   setupAdminPasswordQuery,
-  takeOverUnverifiedUserQuery,
 } from "../model/auth.queries";
 import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
 import { otpGenerator } from "@utils/otpGenerator";
-import { createSession } from "@utils/sessions";
-import { getUserForResendOtpQuery } from "../model/auth.queries";
-import { deleteUserSessions } from "../utils/sessions";
+import { createSession, deleteUserSessions } from "../utils/sessions";
+import { comparePassword, hashPassword } from "../utils/password";
 
 const OTP_TTL_SECONDS = 300;
 const MAX_OTP_ATTEMPTS = 5;
@@ -31,52 +29,95 @@ export const OTP_COOLDOWN_MESSAGE =
 // One place that decides what "the same email" means.
 const cleanEmail = (email: string) => email.trim().toLowerCase();
 
-type OtpPurpose = "otp" | "password-reset";
+type OtpPurpose = "verification" | "password-reset";
 
-const codeKey = (purpose: OtpPurpose, email: string) => `${purpose}:${email}`;
+export class AuthServiceError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AuthServiceError";
+  }
+}
+
+const emailKey = (purpose: OtpPurpose, email: string) =>
+  `${purpose}:${createHash("sha256").update(email).digest("hex")}`;
+const codeKey = (purpose: OtpPurpose, email: string) =>
+  `auth-otp:${emailKey(purpose, email)}`;
 const attemptsKey = (purpose: OtpPurpose, email: string) =>
-  `${purpose}-attempts:${email}`;
+  `auth-otp-attempts:${emailKey(purpose, email)}`;
+const cooldownKey = (purpose: OtpPurpose, email: string) =>
+  `auth-otp-cooldown:${emailKey(purpose, email)}`;
 
 // Saves a fresh code. A new code also starts a fresh set of tries.
 const storeOtp = async (purpose: OtpPurpose, email: string, otp: string) => {
-  await redisClient.set(codeKey(purpose, email), otp, { EX: OTP_TTL_SECONDS });
+  const digest = createHash("sha256").update(otp).digest("hex");
+  await redisClient.set(codeKey(purpose, email), digest, {
+    EX: OTP_TTL_SECONDS,
+  });
   await redisClient.del(attemptsKey(purpose, email));
 };
 
-// Checks a code. After MAX_OTP_ATTEMPTS the code is
-// deleted and the user has to ask for a new one.
+// Validation and consumption happen together so concurrent requests cannot
+// both accept the same code.
 const checkOtp = async (purpose: OtpPurpose, email: string, otp: string) => {
-  const attempts = await redisClient.incr(attemptsKey(purpose, email));
-
-  if (attempts === 1) {
-    await redisClient.expire(attemptsKey(purpose, email), OTP_TTL_SECONDS);
-  }
-
-  if (attempts > MAX_OTP_ATTEMPTS) {
-    await redisClient.del(codeKey(purpose, email));
-    return false;
-  }
-
-  const storedOtp = await redisClient.get(codeKey(purpose, email));
-  if (storedOtp === null || storedOtp !== otp) return false;
-
-  // del() returns 1 for only one of two simultaneous requests,
-  // so a code works exactly once.
-  return (await redisClient.del(codeKey(purpose, email))) === 1;
+  const digest = createHash("sha256").update(otp).digest("hex");
+  const result = await redisClient.eval(
+    `
+      local attempts = redis.call("INCR", KEYS[2])
+      if attempts == 1 then
+        redis.call("EXPIRE", KEYS[2], tonumber(ARGV[2]))
+      end
+      if attempts > tonumber(ARGV[1]) then
+        redis.call("DEL", KEYS[1])
+        return 0
+      end
+      local stored = redis.call("GET", KEYS[1])
+      if stored and stored == ARGV[3] then
+        redis.call("DEL", KEYS[1], KEYS[2])
+        return 1
+      end
+      return 0
+    `,
+    {
+      keys: [codeKey(purpose, email), attemptsKey(purpose, email)],
+      arguments: [
+        String(MAX_OTP_ATTEMPTS),
+        String(OTP_TTL_SECONDS),
+        digest,
+      ],
+    },
+  );
+  return result === 1;
 };
 
 const clearOtp = async (purpose: OtpPurpose, email: string) => {
   await redisClient.del([codeKey(purpose, email), attemptsKey(purpose, email)]);
 };
 
-// Allows one code per email per minute.
-const requireOtpCooldown = async (purpose: OtpPurpose, email: string) => {
-  const result = await redisClient.set(`${purpose}-cooldown:${email}`, "1", {
+const claimOtpCooldown = async (purpose: OtpPurpose, email: string) => {
+  const result = await redisClient.set(cooldownKey(purpose, email), "1", {
     NX: true,
     EX: OTP_COOLDOWN_SECONDS,
   });
 
-  if (result !== "OK") throw new Error(OTP_COOLDOWN_MESSAGE);
+  return result === "OK";
+};
+
+const issueOtp = async (purpose: OtpPurpose, email: string) => {
+  if (!(await claimOtpCooldown(purpose, email))) return false;
+
+  try {
+    const otp = otpGenerator();
+    await storeOtp(purpose, email, otp);
+    await sendOtpEmail(email, otp, purpose);
+    return true;
+  } catch (error) {
+    await clearOtp(purpose, email);
+    await redisClient.del(cooldownKey(purpose, email));
+    throw error;
+  }
 };
 
 interface SignUpInput {
@@ -88,48 +129,46 @@ interface SignUpInput {
 
 export const signUpService = async (data: SignUpInput) => {
   const email = cleanEmail(data.email);
-  await requireOtpCooldown("otp", email);
   const name = data.name.trim();
   const language = data.preferredLanguage ?? "en";
-  const hashedPassword = await bcrypt.hash(data.password, 10);
-
   const found = (await pool.query(getUserByEmail, [email])).rows[0];
 
   if (found?.is_verified) {
-    throw new Error("Email already exists");
+    throw new AuthServiceError("EMAIL_ALREADY_EXISTS", "Email already exists");
   }
 
-  let user;
-  try {
-    // A never-verified account is taken over by whoever signs up now.
-    const result = found
-      ? await pool.query(takeOverUnverifiedUserQuery, [
-          name,
-          hashedPassword,
-          language,
-          email,
-        ])
-      : await pool.query(createUserQuery, [
-          name,
-          email,
-          hashedPassword,
-          language,
-        ]);
-    user = result.rows[0];
-  } catch (error: any) {
-    if (error?.code === "23505") {
-      throw new Error("Email already exists");
+  let user = found;
+  if (!user) {
+    const hashedPassword = await hashPassword(data.password);
+    try {
+      const result = await pool.query(createUserQuery, [
+        name,
+        email,
+        hashedPassword,
+        language,
+      ]);
+      user = result.rows[0];
+    } catch (error: any) {
+      if (error?.code !== "23505") throw error;
+
+      // Another signup may have created the account after the first lookup.
+      user = (await pool.query(getUserByEmail, [email])).rows[0];
+      if (!user || user.is_verified) {
+        throw new AuthServiceError(
+          "EMAIL_ALREADY_EXISTS",
+          "Email already exists",
+        );
+      }
     }
-    throw error;
   }
 
   if (!user) {
-    throw new Error("Email already exists");
+    throw new Error("Unable to create user");
   }
 
-  const otp = otpGenerator();
-  await storeOtp("otp", user.email, otp);
-  await sendOtpEmail(user.email, otp);
+  // Re-registering an unverified email must not replace the original
+  // credentials; only the person who controls the mailbox can verify it.
+  await issueOtp("verification", email);
 
   return { id: user.id, email: user.email };
 };
@@ -140,18 +179,18 @@ export const verifyOtpService = async (data: {
 }) => {
   const email = cleanEmail(data.email);
 
-  if (!(await checkOtp("otp", email, data.otp))) {
-    throw new Error("Invalid or expired OTP");
+  if (!(await checkOtp("verification", email, data.otp))) {
+    throw new AuthServiceError("INVALID_OTP", "Invalid or expired OTP");
   }
 
   const result = await pool.query(updateUserVerifiedQuery, [email]);
 
   if (result.rows.length === 0) {
-    throw new Error("User not found");
+    throw new AuthServiceError("USER_NOT_FOUND", "User not found");
   }
 
   const user = result.rows[0];
-  await clearOtp("otp", email);
+  await clearOtp("verification", email);
 
   return {
     id: user.id,
@@ -172,18 +211,21 @@ export const signInService = async (data: {
   const result = await pool.query(getUserByEmail, [email]);
 
   if (result.rows.length === 0) {
-    throw new Error("Invalid credentials");
+    throw new AuthServiceError("INVALID_CREDENTIALS", "Invalid credentials");
   }
   const user = result.rows[0];
 
-  const isMatch = await bcrypt.compare(data.password, user.password);
+  const isMatch = await comparePassword(data.password, user.password);
 
   if (!isMatch) {
-    throw new Error("Invalid credentials");
+    throw new AuthServiceError("INVALID_CREDENTIALS", "Invalid credentials");
   }
 
   if (!user.is_verified) {
-    throw new Error("Please verify your email first");
+    throw new AuthServiceError(
+      "EMAIL_NOT_VERIFIED",
+      "Please verify your email first",
+    );
   }
 
   const sessionId = await createSession(user.id);
@@ -233,7 +275,7 @@ export const createAdminService = async (data: {
     }
 
     const initialPassword = randomBytes(32).toString("hex");
-    const hashedPassword = await bcrypt.hash(initialPassword, 10);
+    const hashedPassword = await hashPassword(initialPassword);
 
     const result = await client.query(createAdminQuery, [
       data.name.trim(),
@@ -291,7 +333,7 @@ export const setupAdminPasswordService = async (
     throw new Error("Invalid or expired setup link");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await hashPassword(password);
   const result = await pool.query(setupAdminPasswordQuery, [
     hashedPassword,
     Number(userId),
@@ -306,7 +348,6 @@ export const setupAdminPasswordService = async (
 
 export const resendOtpService = async (rawEmail: string) => {
   const email = cleanEmail(rawEmail);
-  await requireOtpCooldown("otp", email);
   const result = await pool.query(getUserForResendOtpQuery, [email]);
 
   const user = result.rows[0];
@@ -314,10 +355,13 @@ export const resendOtpService = async (rawEmail: string) => {
   // Same answer whether or not the account exists, so this endpoint can't be
   // used to find out which emails are registered.
   if (user && !user.is_verified) {
-    const otp = otpGenerator();
-
-    await storeOtp("otp", email, otp);
-    await sendOtpEmail(email, otp);
+    if (!(await issueOtp("verification", email))) {
+      throw new AuthServiceError("OTP_COOLDOWN", OTP_COOLDOWN_MESSAGE);
+    }
+  } else {
+    // Apply the same cooldown regardless of account state to avoid using
+    // response timing to enumerate addresses.
+    await claimOtpCooldown("verification", email);
   }
 
   return { email };
@@ -325,17 +369,15 @@ export const resendOtpService = async (rawEmail: string) => {
 
 export const forgotPasswordService = async (rawEmail: string) => {
   const email = cleanEmail(rawEmail);
-  await requireOtpCooldown("password-reset", email);
   const result = await pool.query(getUserByEmail, [email]);
 
   const user = result.rows[0];
 
   // Same answer whether or not the account exists (see resendOtpService).
   if (user) {
-    const otp = otpGenerator();
-
-    await storeOtp("password-reset", email, otp);
-    await sendOtpEmail(email, otp);
+    await issueOtp("password-reset", email);
+  } else {
+    await claimOtpCooldown("password-reset", email);
   }
 
   return { email };
@@ -348,10 +390,10 @@ export const resetPasswordService = async (
 ) => {
   const email = cleanEmail(rawEmail);
   if (!(await checkOtp("password-reset", email, otp))) {
-    throw new Error("Invalid or expired OTP");
+    throw new AuthServiceError("INVALID_OTP", "Invalid or expired OTP");
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await hashPassword(newPassword);
 
   const result = await pool.query(updateUserPasswordQuery, [
     hashedPassword,
@@ -359,7 +401,7 @@ export const resetPasswordService = async (
   ]);
 
   if (!result.rows[0]) {
-    throw new Error("User not found");
+    throw new AuthServiceError("USER_NOT_FOUND", "User not found");
   }
 
   await clearOtp("password-reset", email);
@@ -408,21 +450,27 @@ export const changePasswordService = async (
   const result = await pool.query(getUserPasswordByIdQuery, [userId]);
 
   if (!result.rows[0]) {
-    throw new Error("User not found");
+    throw new AuthServiceError("USER_NOT_FOUND", "User not found");
   }
 
-  const matches = await bcrypt.compare(
-    currentPassword,
-    result.rows[0].password,
-  );
+  const matches = await comparePassword(currentPassword, result.rows[0].password);
 
   if (!matches) {
-    throw new Error("Current password is incorrect");
+    throw new AuthServiceError(
+      "CURRENT_PASSWORD_INCORRECT",
+      "Current password is incorrect",
+    );
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await hashPassword(newPassword);
 
-  await pool.query(updateUserPasswordByIdQuery, [hashedPassword, userId]);
+  const updated = await pool.query(updateUserPasswordByIdQuery, [
+    hashedPassword,
+    userId,
+  ]);
+  if (!updated.rows[0]) {
+    throw new AuthServiceError("USER_NOT_FOUND", "User not found");
+  }
 
   await deleteUserSessions(userId, currentSessionId);
 };

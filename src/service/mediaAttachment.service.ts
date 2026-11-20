@@ -1,11 +1,13 @@
 import { pool } from "../database/db";
 import {
   createMediaAttachmentQuery,
+  getAdminEventMediaQuery,
   getMediaAttachmentsQuery,
   getMediaAttachmentByIdQuery,
   updateMediaAttachmentQuery,
   deleteMediaAttachmentQuery,
 } from "../model/mediaAttachments.queries";
+import { withVideoEmbed } from "./media.service";
 
 export const createMediaAttachmentService = async (
   mediaId: number,
@@ -35,6 +37,18 @@ export const getMediaAttachments = async () => {
   const result = await pool.query(getMediaAttachmentsQuery);
 
   return result.rows;
+};
+
+export const getAdminEventMedia = async (eventId: number) => {
+  const result = await pool.query(getAdminEventMediaQuery, [eventId]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Event not found");
+  }
+
+  return result.rows
+    .filter((media) => media.id !== null)
+    .map(withVideoEmbed);
 };
 
 export const getMediaAttachmentById = async (id: number) => {

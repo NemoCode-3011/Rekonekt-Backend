@@ -96,28 +96,39 @@ The checked-in [`.env.example`](./.env.example) lists the configuration keys use
 | Variable | Purpose |
 |---|---|
 | `PORT` | HTTP port (defaults to `3000`) |
-| `CLIENT_URL` | Allowed frontend origin for CORS |
+| `CLIENT_URL` | Allowed frontend origin for CORS and state-changing browser requests |
+| `CROSS_SITE_COOKIES` | Set to `true` only when the frontend and API are cross-site; requires HTTPS |
 | `DB_USER`, `DB_HOST`, `DB_PASSWORD`, `DB_PORT`, `DB_NAME` | PostgreSQL connection |
 | `REDIS_URL` | Redis connection string |
 | `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` | Initial admin seed configuration |
 | `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | S3-compatible media storage |
 | `GOOGLE_CLIENT_ID` | Google sign-in configuration |
 | `SMTP_USER`, `SMTP_PASSWORD` | SMTP email delivery |
+| `SIGNUP_LIMIT`, `SIGNIN_LIMIT`, `GOOGLE_AUTH_LIMIT`, `OTP_VERIFY_LIMIT`, `OTP_RESEND_LIMIT`, `PASSWORD_RESET_REQUEST_LIMIT`, `PASSWORD_RESET_LIMIT`, `PASSWORD_CHANGE_LIMIT`, `ADMIN_SETUP_LIMIT` | Optional per-IP limits for each authentication action (requests per 15 minutes) |
+| `AUTH_LIMIT` | Optional fallback limit for authentication actions when no action-specific limit is set |
+| `PUBLIC_READ_LIMIT` | Optional public GET request limit per IP per minute |
 
 External-service credentials are only needed for the integrations you configure. Use the exact environment names in `.env.example` and never put secrets in source control.
+
+State-changing browser requests must send an `Origin` matching `CLIENT_URL`. Requests without an `Origin` header remain supported for server-to-server clients.
+
+Authentication rate limits use the default in-memory store from `express-rate-limit`; deployments with multiple API instances should also apply a shared gateway limit or configure a shared store. OTP codes and cooldowns, unlike these IP limits, are stored in Redis and keyed separately for account verification and password recovery.
 
 ## Useful scripts
 
 ```sh
-npm run dev       # Run the development server
-npm run build     # Compile TypeScript
-npm start         # Run the compiled server
-npm run migrate   # Initialize/update the database schema
-npm run seed      # Create the initial super-admin account
+npm run dev          # Run the development server
+npm run build        # Compile TypeScript
+npm test             # Run the API regression tests
+npm start            # Run the compiled server
+npm run migrate      # Initialize/update the database schema
+npm run seed         # Create the initial super-admin account
+npm run seed:benin   # Load the Benin historical dataset
+npm run seed:reading # Load the reading content dataset
 ```
 
 ## Related project
 
 - [REKÒ Frontend](https://github.com/NemoCode-3011/Rekonekt-Frontend) — React and TypeScript application.
 
-REKÒ is being developed around **The Aburi Accord** as its first exhibition. The platform's content model is designed to support further exhibitions and connected Nigerian historical and cultural material.
+REKÒ is currently developed around the **Benin Empire** as its first exhibition focus. This inaugural subject helps define the platform's content model and establishes a foundation for future exhibitions, stories, and connected Nigerian historical and cultural material.

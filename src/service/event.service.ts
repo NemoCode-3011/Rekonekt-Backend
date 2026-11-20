@@ -10,7 +10,7 @@ import {
 } from "src/model/event.queries";
 
 export const createEventService = async (data: {
-  sectionId: number;
+  sectionId: number | null;
   title: string;
   slug: string;
   description?: string;
@@ -62,9 +62,9 @@ export const getEventByIdService = async (id: number) => {
 export const updateEventService = async (
   id: number,
   data: {
-    sectionId: number;
-    title: string;
-    slug: string;
+    sectionId?: number | null;
+    title?: string;
+    slug?: string;
     description?: string;
     eventDate?: string;
     dateDisplay?: string;
@@ -73,12 +73,14 @@ export const updateEventService = async (
 ) => {
   try {
     const result = await pool.query(updateEventQuery, [
-      data.title,
-      data.slug,
-      data.description,
-      data.eventDate,
-      data.dateDisplay,
-      data.imageUrl,
+      data.sectionId ?? null,
+      Object.prototype.hasOwnProperty.call(data, "sectionId"),
+      data.title ?? null,
+      data.slug ?? null,
+      data.description ?? null,
+      data.eventDate ?? null,
+      data.dateDisplay ?? null,
+      data.imageUrl ?? null,
       id,
     ]);
 

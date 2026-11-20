@@ -22,6 +22,15 @@ export const getMediaAttachmentsQuery = `
   ORDER BY ma.display_order ASC, ma.created_at ASC;
 `;
 
+export const getAdminEventMediaQuery = `
+  SELECT m.*, ma.id AS attachment_id, ma.display_order
+  FROM events e
+  LEFT JOIN media_attachments ma ON ma.event_id = e.id
+  LEFT JOIN media m ON m.id = ma.media_id
+  WHERE e.id = $1
+  ORDER BY ma.display_order ASC NULLS LAST, ma.created_at ASC NULLS LAST;
+`;
+
 export const getMediaAttachmentByIdQuery = `
   SELECT ma.*
   FROM media_attachments ma

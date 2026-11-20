@@ -10,9 +10,11 @@ import { sendResponse } from "../utils/response";
 import { uploadToR2 } from "src/service/r2.service";
 import {
   createMediaSchema,
+  createYouTubeMediaSchema,
   updateMediaSchema,
   uploadMediaSchema,
 } from "src/validation/media.schema";
+import { parseYouTubeVideoUrl } from "src/utils/youtube";
 
 export const createMediaController = async (req: Request, res: Response) => {
   try {
@@ -50,7 +52,49 @@ export const createMediaController = async (req: Request, res: Response) => {
   }
 };
 
-export const getMediaController = async (req: Request, res: Response) => {
+export const createYouTubeMediaController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const validation = createYouTubeMediaSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return sendResponse(res, 400, validation.error.issues[0].message);
+    }
+
+    const source = parseYouTubeVideoUrl(validation.data.youtubeUrl);
+
+    if (!source) {
+      return sendResponse(res, 400, "A valid YouTube video URL is required");
+    }
+
+    const {
+      title,
+      caption,
+      description,
+      sourceCredit,
+      license,
+    } = validation.data;
+
+    const media = await createMediaService({
+      title,
+      mediaType: "video",
+      fileUrl: source.canonicalUrl,
+      caption,
+      description,
+      sourceCredit,
+      license,
+    });
+
+    return sendResponse(res, 201, "YouTube video added successfully", media);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getMediaController = async (_req: Request, res: Response) => {
   try {
     const media = await getMedia();
 

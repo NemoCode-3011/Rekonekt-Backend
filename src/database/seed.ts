@@ -1,7 +1,7 @@
 import "dotenv/config";
-import bcrypt from "bcrypt";
 import { pool } from "./db";
 import { createSuperAdminQuery } from "../model/auth.queries";
+import { hashPassword } from "../utils/password";
 
 const { SUPER_ADMIN_NAME, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD } =
   process.env;
@@ -12,7 +12,7 @@ if (!SUPER_ADMIN_NAME || !SUPER_ADMIN_EMAIL || !SUPER_ADMIN_PASSWORD) {
 
 const seed = async () => {
   try {
-    const hashedPassword = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 10);
+    const hashedPassword = await hashPassword(SUPER_ADMIN_PASSWORD);
     const result = await pool.query(createSuperAdminQuery, [
       SUPER_ADMIN_NAME,
       SUPER_ADMIN_EMAIL.trim().toLowerCase(),

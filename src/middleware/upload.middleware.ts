@@ -19,7 +19,7 @@ const createUploader = (maxSize: number) => {
     limits: {
       fileSize: maxSize,
     },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (_req, file, cb) => {
       if (!allowedMimeTypes.includes(file.mimetype)) {
         return cb(new Error("Unsupported file type"));
       }

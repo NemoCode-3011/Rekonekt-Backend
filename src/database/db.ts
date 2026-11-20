@@ -22,6 +22,7 @@ import {
   createBookmarksTable,
   createNotesTable,
   createProgressTable,
+  createUserDataIndexes,
   createSectionPeopleTable,
   createSectionPlacesTable,
   alterSourceLinksAddStoryAndPlace,
@@ -95,6 +96,8 @@ export const createTables = async () => {
     console.log("notes table created");
     await client.query(createProgressTable);
     console.log("progress table created");
+    await client.query(createUserDataIndexes);
+    console.log("user data indexes created");
     await client.query(createSectionPeopleTable);
     console.log("section_people table created");
     await client.query(createSectionPlacesTable);

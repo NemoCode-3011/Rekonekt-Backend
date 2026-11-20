@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   addEventPlace,
+  getAdminPlacesByEvent,
   getPlacesByEvent,
   removeEventPlace,
 } from "../service/eventPlaces.service";
@@ -54,6 +55,29 @@ export const getPlacesByEventController = async (
       places,
     );
   } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+
+export const getAdminPlacesByEventController = async (
+  req: Request,
+  res: Response,
+) => {
+  const eventId = Number(req.params.eventId);
+
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    return sendResponse(res, 400, "Invalid event ID");
+  }
+
+  try {
+    const places = await getAdminPlacesByEvent(eventId);
+    return sendResponse(res, 200, "Event places retrieved successfully", places);
+  } catch (error: any) {
+    if (error.message === "Event not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }

@@ -54,7 +54,7 @@ export const createSourceController = async (req: Request, res: Response) => {
   }
 };
 
-export const getSourcesController = async (req: Request, res: Response) => {
+export const getSourcesController = async (_req: Request, res: Response) => {
   try {
     const sources = await getSources();
 

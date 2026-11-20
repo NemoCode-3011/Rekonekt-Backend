@@ -33,7 +33,7 @@ export const createEventController = async (req: Request, res: Response) => {
     } = validation.data;
 
     const event = await createEventService({
-      sectionId,
+      sectionId: sectionId ?? null,
       title,
       slug,
       description,
@@ -46,7 +46,14 @@ export const createEventController = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.log(error.message || error);
 
-    if (error.code === "23505") {
+    if (error.message === "Section not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    if (
+      error.code === "23505" ||
+      error.message === "Event slug already exists in this section"
+    ) {
       return sendResponse(res, 409, "Event slug already exists");
     }
 
@@ -109,9 +116,20 @@ export const updateEventController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "Event updated successfully", event);
   } catch (error: any) {
+    if (error.message === "Event not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
+    if (error.message === "Section not found") {
+      return sendResponse(res, 404, error.message);
+    }
+
     console.log(error.message || error);
 
-    if (error.code === "23505") {
+    if (
+      error.code === "23505" ||
+      error.message === "Event slug already exists in this section"
+    ) {
       return sendResponse(res, 409, "Event slug already exists");
     }
 
@@ -140,7 +158,7 @@ export const deleteEventController = async (req: Request, res: Response) => {
   }
 };
 export const getPublishedEventsController = async (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   try {

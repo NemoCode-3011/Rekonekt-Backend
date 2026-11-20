@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const createMediaSchema = z.object({
+const mediaDetailsSchema = z.object({
   title: z
     .string({
       error: "Title is required",
@@ -8,6 +8,22 @@ export const createMediaSchema = z.object({
     .min(2, "Title must be at least 2 characters")
     .max(255, "Title must not exceed 255 characters"),
 
+  caption: z.string().optional(),
+
+  description: z.string().optional(),
+
+  sourceCredit: z
+    .string()
+    .max(500, "Source credit must not exceed 500 characters")
+    .optional(),
+
+  license: z
+    .string()
+    .max(255, "License must not exceed 255 characters")
+    .optional(),
+});
+
+export const createMediaSchema = mediaDetailsSchema.extend({
   mediaType: z.enum(["image", "document", "audio", "video"], {
     error: "Media type must be image, document, audio or video",
   }),
@@ -17,20 +33,14 @@ export const createMediaSchema = z.object({
       error: "File URL is required",
     })
     .url("Invalid file URL"),
+});
 
-  caption: z.string().optional(),
-
-  description: z.string().optional(),
-
-  sourceCredit: z
-    .string()
-    .max(255, "Source credit must not exceed 255 characters")
-    .optional(),
-
-  license: z
-    .string()
-    .max(255, "License must not exceed 255 characters")
-    .optional(),
+export const createYouTubeMediaSchema = mediaDetailsSchema.extend({
+  youtubeUrl: z
+    .string({
+      error: "YouTube URL is required",
+    })
+    .url("Invalid YouTube URL"),
 });
 
 export const updateMediaSchema = createMediaSchema.partial();

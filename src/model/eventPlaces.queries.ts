@@ -20,6 +20,15 @@ export const getPlacesByEventQuery = `
   ORDER BY p.name ASC;
 `;
 
+export const getAdminPlacesByEventQuery = `
+  SELECT p.*
+  FROM events e
+  LEFT JOIN event_places ep ON ep.event_id = e.id
+  LEFT JOIN places p ON p.id = ep.place_id
+  WHERE e.id = $1
+  ORDER BY p.name ASC NULLS LAST;
+`;
+
 export const removeEventPlaceQuery = `
   DELETE FROM event_places
   WHERE event_id = $1

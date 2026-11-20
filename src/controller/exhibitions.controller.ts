@@ -16,7 +16,7 @@ import {
 } from "src/validation/exhibition.schema";
 
 export const getPublishedExhibitionsController = async (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   try {
@@ -36,7 +36,7 @@ export const getPublishedExhibitionsController = async (
 };
 
 export const getAdminExhibitionsController = async (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   try {

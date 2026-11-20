@@ -32,14 +32,15 @@ export const getEventByIdQuery = `
 export const updateEventQuery = `
   UPDATE events
   SET
-    title = COALESCE($1, title),
-    slug = COALESCE($2, slug),
-    description = COALESCE($3, description),
-    event_date = COALESCE($4, event_date),
-    date_display = COALESCE($5, date_display),
-    image_url = COALESCE($6, image_url),
+    section_id = CASE WHEN $2 THEN $1 ELSE section_id END,
+    title = COALESCE($3, title),
+    slug = COALESCE($4, slug),
+    description = COALESCE($5, description),
+    event_date = COALESCE($6, event_date),
+    date_display = COALESCE($7, date_display),
+    image_url = COALESCE($8, image_url),
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $7
+  WHERE id = $9
   RETURNING *;
 `;
 

@@ -59,7 +59,7 @@ export const createArtifactController = async (req: Request, res: Response) => {
     return sendResponse(res, 500, "Internal server error");
   }
 };
-export const getArtifactsController = async (req: Request, res: Response) => {
+export const getArtifactsController = async (_req: Request, res: Response) => {
   try {
     const artifacts = await getArtifacts();
 

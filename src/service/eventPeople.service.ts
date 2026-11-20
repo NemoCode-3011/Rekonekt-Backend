@@ -1,6 +1,7 @@
 import { pool } from "../database/db";
 import {
   addEventPersonQuery,
+  getAdminPeopleByEventQuery,
   getPeopleByEventQuery,
   removeEventPersonQuery,
 } from "src/model/eventPeople.queries";
@@ -15,6 +16,16 @@ export const getPeopleByEvent = async (eventId: number) => {
   const result = await pool.query(getPeopleByEventQuery, [eventId]);
 
   return result.rows;
+};
+
+export const getAdminPeopleByEvent = async (eventId: number) => {
+  const result = await pool.query(getAdminPeopleByEventQuery, [eventId]);
+
+  if (result.rows.length === 0) {
+    throw new Error("Event not found");
+  }
+
+  return result.rows.filter((person) => person.id !== null);
 };
 
 export const removeEventPerson = async (eventId: number, personId: number) => {

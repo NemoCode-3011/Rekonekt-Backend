@@ -26,10 +26,29 @@ export const googleAuthController = async (req: Request, res: Response) => {
     );
   } catch (error: any) {
     if (error.message === "NO_ACCOUNT") {
-      return sendResponse(res,404,"No account found for this Google email. Please sign up first.",
+      return sendResponse(
+        res,
+        404,
+        "No account found for this Google email. Please sign up first.",
       );
     }
-    console.log(error.message || error);
-    return sendResponse(res, 401, "Google authentication failed");
+
+    if (error.message === "Staff accounts cannot use Google sign-in") {
+      return sendResponse(res, 403, error.message);
+    }
+
+    if (error.message === "Email is linked to another Google account") {
+      return sendResponse(res, 409, error.message);
+    }
+
+    if (
+      error.message === "Invalid Google account" ||
+      error.message === "Google email is not verified"
+    ) {
+      return sendResponse(res, 401, "Google authentication failed");
+    }
+
+    console.error(error);
+    return sendResponse(res, 500, "Internal server error");
   }
 };

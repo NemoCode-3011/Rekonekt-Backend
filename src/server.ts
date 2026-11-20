@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import { Application, Request, Response } from "express";
-import { isDBConnected } from "../src/database/db";
-import { createTables } from "../src/database/db";
+import { createTables, isDBConnected } from "../src/database/db";
 import authRoutes from "../src/routes/auth.routes";
 import { connectRedis } from "@config/redis";
 import cookieParser from "cookie-parser";
@@ -14,6 +13,7 @@ import eventRoutes from "../src/routes/event.routes";
 import personRoutes from "../src/routes/people.routes";
 import placeRoutes from "../src/routes/places.routes";
 import eventPeopleRoutes from "../src/routes/eventPeople.routes";
+import eventMediaRoutes from "../src/routes/eventMedia.routes";
 import eventPlaceRoutes from "../src/routes/eventPlace.routes";
 import artifactRoutes from "../src/routes/artifacts.routes";
 import mediaRoutes from "../src/routes/media.routes";
@@ -33,6 +33,7 @@ import swaggerSpec from "../src/docs/swagger";
 import cors from "cors";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
 import { publicReadLimiter } from "@middleware/rateLimit.middleware";
+import { verifyRequestOrigin } from "@middleware/requestOrigin.middleware";
 
 dotenv.config();
 
@@ -41,16 +42,18 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 
+const clientUrl = process.env.CLIENT_URL ?? "http://localhost:5173";
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ?? "http://localhost:5173",
+    origin: clientUrl,
     credentials: true,
   }),
 );
+app.use(verifyRequestOrigin(clientUrl));
 
 const port = Number(process.env.PORT) || 3000;
 
-app.get("/health", (req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({
     message: "server is healthy",
   });
@@ -73,6 +76,7 @@ app.use("/people", personRoutes);
 app.use("/places", placeRoutes);
 app.use("/", eventPeopleRoutes);
 app.use("/", eventPlaceRoutes);
+app.use("/", eventMediaRoutes);
 app.use("/artifacts", artifactRoutes);
 app.use("/media", mediaRoutes);
 app.use("/media-attachment", mediaAttachmentRoutes);

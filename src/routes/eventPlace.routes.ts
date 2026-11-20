@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addEventPlaceController,
+  getAdminPlacesByEventController,
   getPlacesByEventController,
   removeEventPlaceController,
 } from "../controller/eventPlace.controller";
@@ -11,6 +12,13 @@ import {
 import { requireRole } from "@middleware/authorize";
 
 const router = Router();
+
+router.get(
+  "/admin/events/:eventId/places",
+  verifyUser,
+  requireRole("admin", "super admin"),
+  getAdminPlacesByEventController,
+);
 
 router.post("/events/:eventId/places",verifyUser,requireRole("admin", "super admin"),addEventPlaceController,);
 

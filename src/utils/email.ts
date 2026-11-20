@@ -11,7 +11,31 @@ const transport = nodemailer.createTransport({
   },
 });
 
-const createOtpEmail = (otp: string) => {
+export type OtpEmailPurpose = "verification" | "password-reset";
+
+const otpPurposeContent = (purpose: OtpEmailPurpose) =>
+  purpose === "verification"
+    ? {
+        subject: "Verify your REKÒ account",
+        heading: "Verify your email",
+        introduction:
+          "Use the code below to finish creating your REKÒ account.",
+        label: "VERIFICATION CODE",
+        action: "create a REKÒ account",
+        textAction: "verification",
+      }
+    : {
+        subject: "Reset your REKÒ password",
+        heading: "Reset your password",
+        introduction:
+          "Use the code below to reset the password for your REKÒ account.",
+        label: "PASSWORD RESET CODE",
+        action: "request a password reset",
+        textAction: "password reset",
+      };
+
+const createOtpEmail = (otp: string, purpose: OtpEmailPurpose) => {
+  const content = otpPurposeContent(purpose);
   return `
     <!DOCTYPE html>
     <html>
@@ -19,7 +43,7 @@ const createOtpEmail = (otp: string) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <title>Verify your REKÒ account</title>
+        <title>${content.subject}</title>
       </head>
 
       <body style="
@@ -88,7 +112,7 @@ const createOtpEmail = (otp: string) => {
                       font-size: 26px;
                       font-weight: 600;
                     ">
-                      Verify your email
+                      ${content.heading}
                     </h1>
 
                     <p style="
@@ -96,8 +120,7 @@ const createOtpEmail = (otp: string) => {
                       font-size: 16px;
                       line-height: 1.6;
                     ">
-                      Welcome to REKÒ. Use the verification code below
-                      to finish creating your account.
+                      ${content.introduction}
                     </p>
 
                     <!-- OTP -->
@@ -116,7 +139,7 @@ const createOtpEmail = (otp: string) => {
                         letter-spacing: 2px;
                         margin-bottom: 12px;
                       ">
-                        VERIFICATION CODE
+                        ${content.label}
                       </div>
 
                       <div style="
@@ -144,7 +167,7 @@ const createOtpEmail = (otp: string) => {
                       font-size: 13px;
                       line-height: 1.6;
                     ">
-                      If you didn't create a REKÒ account, you can
+                      If you didn't ${content.action}, you can
                       safely ignore this email.
                     </p>
 
@@ -188,13 +211,30 @@ const createOtpEmail = (otp: string) => {
   `;
 };
 
-export const sendOtpEmail = async (email: string, otp: string) => {
+const createOtpEmailContent = (
+  otp: string,
+  purpose: OtpEmailPurpose,
+) => {
+  const content = otpPurposeContent(purpose);
+  return {
+    subject: content.subject,
+    text: `Your REKÒ ${content.textAction} code is ${otp}. It expires in 5 minutes.`,
+    html: createOtpEmail(otp, purpose),
+  };
+};
+
+export const sendOtpEmail = async (
+  email: string,
+  otp: string,
+  purpose: OtpEmailPurpose,
+) => {
+  const content = createOtpEmailContent(otp, purpose);
   const mailOption = {
     from: `"REKÒ" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: "Verify your REKÒ account",
-    text: `Your REKÒ verification code is ${otp}. It expires in 5 minutes.`,
-    html: createOtpEmail(otp),
+    subject: content.subject,
+    text: content.text,
+    html: content.html,
   };
 
   await transport.sendMail(mailOption);

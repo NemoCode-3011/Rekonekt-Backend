@@ -228,6 +228,14 @@ completed BOOLEAN DEFAULT FALSE,
 UNIQUE(user_id, exhibition_id)
 )
 `;
+export const createUserDataIndexes = `
+CREATE INDEX IF NOT EXISTS bookmarks_user_created_at_idx
+  ON bookmarks(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notes_user_created_at_idx
+  ON notes(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS progress_user_last_viewed_idx
+  ON progress(user_id, last_viewed_at DESC);
+`;
 export const createSectionPeopleTable = `
 CREATE TABLE IF NOT EXISTS section_people(
 section_id INT NOT NULL REFERENCES sections(id) ON DELETE CASCADE,

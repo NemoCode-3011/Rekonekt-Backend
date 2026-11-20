@@ -3,10 +3,12 @@ import { z } from "zod";
 export const createEventSchema = z.object({
   sectionId: z
     .number({
-      error: "Section ID is required",
+      error: "Section ID must be an integer",
     })
     .int("Section ID must be an integer")
-    .positive("Section ID must be positive"),
+    .positive("Section ID must be positive")
+    .nullable()
+    .optional(),
 
   title: z
     .string({
@@ -50,4 +52,12 @@ export const updateEventSchema = createEventSchema
   .omit({
     sectionId: true,
   })
-  .partial();
+  .partial()
+  .extend({
+    sectionId: z
+      .number()
+      .int("Section ID must be an integer")
+      .positive("Section ID must be positive")
+      .nullable()
+      .optional(),
+  });

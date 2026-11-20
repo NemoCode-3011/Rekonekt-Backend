@@ -236,7 +236,7 @@ export const getAdminStoriesBySectionController = async (
   }
 };
 export const getPublishedStoriesController = async (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   try {
@@ -252,7 +252,7 @@ export const getPublishedStoriesController = async (
 // The home page's "Did you know?" story. When there is none yet, this is still
 // a normal 200 with data: null, so the home page can quietly hide the section.
 export const getDidYouKnowStoryController = async (
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   try {

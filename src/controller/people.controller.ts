@@ -44,7 +44,7 @@ export const createPersonController = async (req: Request, res: Response) => {
   }
 };
 
-export const getPeopleController = async (req: Request, res: Response) => {
+export const getPeopleController = async (_req: Request, res: Response) => {
   try {
     const result = await getPeopleService();
 

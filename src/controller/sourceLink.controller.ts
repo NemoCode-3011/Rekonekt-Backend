@@ -46,7 +46,7 @@ export const createSourceLinkController = async (
   }
 };
 
-export const getSourceLinksController = async (req: Request, res: Response) => {
+export const getSourceLinksController = async (_req: Request, res: Response) => {
   try {
     const sourceLinks = await getSourceLinks();
 

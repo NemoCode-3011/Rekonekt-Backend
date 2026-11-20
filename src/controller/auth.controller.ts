@@ -13,9 +13,10 @@ import {
   getAdminsService,
   revokeAdminService,
   setupAdminPasswordService,
+  AuthServiceError,
+  signInService,
 } from "../service/auth.service";
 import { sendResponse } from "../utils/response";
-import { signInService } from "src/service/auth.service";
 import {
   resendOtpSchema,
   resetPasswordSchema,
@@ -25,13 +26,12 @@ import {
   changePasswordSchema,
   createAdminSchema,
   setupAdminPasswordSchema,
+  signInSchema,
 } from "src/validation/auth.schema";
-import { signInSchema } from "src/validation/auth.schema";
 import {
   sessionCookieOptions,
   clearSessionCookieOptions,
 } from "../utils/cookies";
-import { OTP_COOLDOWN_MESSAGE } from "../service/auth.service";
 
 export const signUpController = async (req: Request, res: Response) => {
   try {
@@ -52,10 +52,13 @@ export const signUpController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 201, "User created successfully", user);
   } catch (error: any) {
-    console.log(error.message || error);
-    if (error.message === OTP_COOLDOWN_MESSAGE) {
-      return sendResponse(res, 429, error.message);
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "EMAIL_ALREADY_EXISTS"
+    ) {
+      return sendResponse(res, 409, error.message);
     }
+    console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");
   }
 };
@@ -73,8 +76,14 @@ export const verifyOtpController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "OTP verified successfully", results);
   } catch (error: any) {
-    if (error.message === "Invalid or expired OTP") {
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "INVALID_OTP"
+    ) {
       return sendResponse(res, 400, error.message);
+    }
+    if (error instanceof AuthServiceError && error.code === "USER_NOT_FOUND") {
+      return sendResponse(res, 404, error.message);
     }
     console.log(error.message || error);
     return sendResponse(res, 500, "internal server error");
@@ -105,11 +114,17 @@ export const signInController = async (req: Request, res: Response) => {
       is_verified: results.is_verified,
     });
   } catch (error: any) {
-    if (error.message === "Invalid credentials") {
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "INVALID_CREDENTIALS"
+    ) {
       return sendResponse(res, 401, error.message);
     }
 
-    if (error.message === "Please verify your email first") {
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "EMAIL_NOT_VERIFIED"
+    ) {
       return sendResponse(res, 403, error.message);
     }
 
@@ -223,12 +238,15 @@ export const resendOtpController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "Verification OTP sent successfully", result);
   } catch (error: any) {
-    console.log(error.message || error);
-    if (error.message === OTP_COOLDOWN_MESSAGE) {
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "OTP_COOLDOWN"
+    ) {
       return sendResponse(res, 429, error.message);
     }
 
-    return sendResponse(res, 400, error.message || "Failed to resend OTP");
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
@@ -245,10 +263,8 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "Password reset OTP sent successfully");
   } catch (error: any) {
-    if (error.message === OTP_COOLDOWN_MESSAGE) {
-      return sendResponse(res, 429, error.message);
-    }
-    return sendResponse(res, 400, error.message || "Failed to send reset OTP");
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 
@@ -266,7 +282,14 @@ export const resetPasswordController = async (req: Request, res: Response) => {
 
     return sendResponse(res, 200, "Password reset successfully", result);
   } catch (error: any) {
-    return sendResponse(res, 400, error.message || "Failed to reset password");
+    if (
+      error instanceof AuthServiceError &&
+      (error.code === "INVALID_OTP" || error.code === "USER_NOT_FOUND")
+    ) {
+      return sendResponse(res, 400, error.message);
+    }
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
   }
 };
 export const updateProfileController = async (req: Request, res: Response) => {
@@ -319,11 +342,14 @@ export const changePasswordController = async (req: Request, res: Response) => {
     );
     return sendResponse(res, 200, "Password changed successfully");
   } catch (error: any) {
-    if (error.message === "Current password is incorrect") {
+    if (
+      error instanceof AuthServiceError &&
+      error.code === "CURRENT_PASSWORD_INCORRECT"
+    ) {
       return sendResponse(res, 400, error.message);
     }
 
-    if (error.message === "User not found") {
+    if (error instanceof AuthServiceError && error.code === "USER_NOT_FOUND") {
       return sendResponse(res, 404, error.message);
     }
 

@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { sendResponse } from "src/utils/response";
 import { getCulturalGroupsService } from "src/service/culturalGroups.service";
 
-export const getCulturalGroupsController = async (req: Request,res: Response,) => {
+export const getCulturalGroupsController = async (
+  _req: Request,
+  res: Response,
+) => {
   try {
     const groups = await getCulturalGroupsService();
 
