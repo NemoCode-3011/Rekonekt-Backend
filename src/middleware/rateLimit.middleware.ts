@@ -1,4 +1,5 @@
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
+import { createRedisRateLimitStore } from "../utils/rateLimitStore";
 
 const authWindowMs = 15 * 60 * 1000;
 
@@ -11,14 +12,20 @@ const configuredLimit = (name: string, fallback: number) => {
 const authLimitMessage =
   "Too many attempts. Please wait a few minutes and try again.";
 
-const createAuthLimiter = (setting: string, fallback: number) =>
+export const createAuthLimiter = (setting: string, fallback: number) =>
   rateLimit({
     windowMs: authWindowMs,
     limit: configuredLimit(setting, fallback),
     standardHeaders: true,
     legacyHeaders: false,
+    passOnStoreError: false,
+    store: createRedisRateLimitStore(
+      `rekonekt:rate-limit:auth:${setting.toLowerCase()}:`,
+    ),
     handler: (_req, res) => {
-      res.status(429).json({ message: authLimitMessage, data: null });
+      res
+        .status(429)
+        .json({ code: "RATE_LIMITED", message: authLimitMessage, data: null });
     },
   });
 
@@ -44,15 +51,25 @@ export const passwordChangeLimiter = createAuthLimiter(
 );
 export const adminSetupLimiter = createAuthLimiter("ADMIN_SETUP_LIMIT", 5);
 
+const configuredPublicReadLimit = Number(process.env.PUBLIC_READ_LIMIT);
+const publicReadLimit =
+  Number.isInteger(configuredPublicReadLimit) && configuredPublicReadLimit > 0
+    ? configuredPublicReadLimit
+    : 600;
+
 export const publicReadLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: Number(process.env.PUBLIC_READ_LIMIT) || 600,
+  limit: publicReadLimit,
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: false,
+  store: createRedisRateLimitStore("rekonekt:rate-limit:public-read:"),
   skip: (req) => req.method !== "GET",
   handler: (_req, res) => {
-    res
-      .status(429)
-      .json({ message: "Too many requests. Please slow down and try again shortly.", data: null });
+    res.status(429).json({
+      code: "RATE_LIMITED",
+      message: "Too many requests. Please slow down and try again shortly.",
+      data: null,
+    });
   },
 });

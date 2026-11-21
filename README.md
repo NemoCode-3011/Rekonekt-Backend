@@ -112,7 +112,29 @@ External-service credentials are only needed for the integrations you configure.
 
 State-changing browser requests must send an `Origin` matching `CLIENT_URL`. Requests without an `Origin` header remain supported for server-to-server clients.
 
-Authentication rate limits use the default in-memory store from `express-rate-limit`; deployments with multiple API instances should also apply a shared gateway limit or configure a shared store. OTP codes and cooldowns, unlike these IP limits, are stored in Redis and keyed separately for account verification and password recovery.
+Authentication and public-read rate limits use Redis with a separate key prefix per action. Every API instance must use the same reachable `REDIS_URL` for limits to be shared. If Redis is unavailable, rate-limited requests fail closed with `503 RATE_LIMIT_STORE_UNAVAILABLE`. Limits are keyed by client IP; OTP codes and cooldowns are additionally isolated by email and purpose.
+
+## Authentication response codes
+
+The signup, sign-in, OTP, password-recovery, and password-change flows return `{ code, message, data }` so clients can use stable codes rather than parsing messages.
+
+| Flow | Status and code | Client action |
+|---|---|---|
+| New signup; verification code sent | `201 OTP_SENT` | Continue to OTP; data includes expiry and resend timing. |
+| Existing verified account | `409 EMAIL_ALREADY_EXISTS` | Sign in. |
+| Existing unverified account | `409 EMAIL_REQUIRES_VERIFICATION` | Explicitly request a code using `/auth/resend-otp`; signup does not issue another OTP. |
+| Verification resend accepted | `200 OTP_REQUEST_ACCEPTED` | Check email; account/OTP details are intentionally undisclosed. |
+| Verification resend cooldown | `429 OTP_COOLDOWN` | Check email or retry after `data.retryAfterSeconds`. |
+| OTP invalid, expired, or attempts exceeded | `400 INVALID_OTP`, `400 OTP_EXPIRED`, or `429 OTP_ATTEMPTS_EXCEEDED` | Correct the code or request a new one as indicated by `data.nextStep`. |
+| Password recovery requested | `200 PASSWORD_RESET_REQUEST_ACCEPTED` | Check email. The response is identical for unknown accounts and cooldowns to prevent enumeration. |
+| Password reset/change completed | `200 PASSWORD_RESET` or `200 PASSWORD_CHANGED` | Continue to sign in. |
+| Request rate limited | `429 RATE_LIMITED` | Retry after the response's rate-limit headers permit. |
+
+`otpSent: null` in resend and password-recovery responses means the API intentionally does not disclose whether an account exists or an email was sent. The resend cooldown remains shared in Redis.
+
+## Maintenance functionality
+
+The backend currently has no maintenance endpoint or maintenance action. No maintenance route or authorization contract is implemented; the frontend must not expect one from this API.
 
 ## Useful scripts
 

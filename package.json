@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc && tsc-alias -p tsconfig.json",
-    "test": "tsx --test tests/auth-stabilization.test.ts tests/event-relationships.test.ts tests/youtube-media.test.ts tests/request-origin.test.ts",
+    "test": "tsx --test tests/auth-stabilization.test.ts tests/event-relationships.test.ts tests/youtube-media.test.ts tests/request-origin.test.ts tests/rate-limit.test.ts",
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migration.ts",
     "seed": "tsx src/database/seed.ts",
@@ -29,6 +29,7 @@
     "multer": "^2.4.0",
     "nodemailer": "^10.0.12",
     "pg": "^8.23.0",
+    "rate-limit-redis": "^6.0.2",
     "redis": "^6.2.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",

@@ -21,7 +21,9 @@ interface User {
 interface TestState {
   users: Map<string, User>;
   redis: Map<string, string>;
+  redisExpiry: Map<string, number>;
   attempts: Map<string, number>;
+  rateLimits: Map<string, { hits: number; expiresAt: number }>;
   emails: Array<{
     email: string;
     otp: string;
@@ -44,7 +46,9 @@ const runAuthApi = async (t: TestContext) => {
   const state: TestState = {
     users: new Map(),
     redis: new Map(),
+    redisExpiry: new Map(),
     attempts: new Map(),
+    rateLimits: new Map(),
     emails: [],
     nextId: 1,
     failEmail: false,
@@ -80,6 +84,7 @@ const runAuthApi = async (t: TestContext) => {
   });
   const { pool } = require("../src/database/db") as typeof import("../src/database/db");
   const { redisClient } = require("../src/config/redis") as typeof import("../src/config/redis");
+  const { runRateLimitRedisCommand } = require("./support/rateLimitRedis") as typeof import("./support/rateLimitRedis");
   const {
     createUserQuery,
     getUserByEmail,
@@ -176,6 +181,9 @@ const runAuthApi = async (t: TestContext) => {
     ) => {
       if (options?.NX && state.redis.has(key)) return null;
       state.redis.set(key, value);
+      if (options?.EX) {
+        state.redisExpiry.set(key, Date.now() + options.EX * 1000);
+      }
       return "OK";
     },
   );
@@ -184,10 +192,26 @@ const runAuthApi = async (t: TestContext) => {
     let deleted = 0;
     for (const key of keys) {
       if (state.redis.delete(key)) deleted++;
+      state.redisExpiry.delete(key);
+      state.attempts.delete(key);
     }
     return deleted;
   });
   t.mock.method(redisClient, "expire", async () => 1);
+  t.mock.method(redisClient, "ttl", async (key: string) => {
+    const expiresAt = state.redisExpiry.get(key);
+    if (expiresAt === undefined) return -2;
+    const remaining = Math.ceil((expiresAt - Date.now()) / 1000);
+    if (remaining <= 0) {
+      state.redis.delete(key);
+      state.redisExpiry.delete(key);
+      return -2;
+    }
+    return remaining;
+  });
+  t.mock.method(redisClient, "sendCommand", async (args: readonly unknown[]) =>
+    runRateLimitRedisCommand(args, state.rateLimits),
+  );
   t.mock.method(
     redisClient,
     "eval",
@@ -196,17 +220,27 @@ const runAuthApi = async (t: TestContext) => {
       options: { keys: string[]; arguments: string[] },
     ) => {
       const [codeKey, attemptsKey] = options.keys;
-      const [maxAttempts, _ttl, digest] = options.arguments;
+      const [maxAttempts, ttl, digest] = options.arguments;
+      if (!state.redis.has(codeKey)) return [-1, 0];
       const attempts = (state.attempts.get(attemptsKey) ?? 0) + 1;
       state.attempts.set(attemptsKey, attempts);
       if (attempts > Number(maxAttempts)) {
         state.redis.delete(codeKey);
-        return 0;
+        state.attempts.delete(attemptsKey);
+        return [-2, 0];
       }
-      if (state.redis.get(codeKey) !== digest) return 0;
+      if (attempts === 1) {
+        state.redis.set(attemptsKey, String(attempts));
+        state.redisExpiry.set(attemptsKey, Date.now() + Number(ttl) * 1000);
+      }
+      if (state.redis.get(codeKey) !== digest) {
+        return [0, Number(maxAttempts) - attempts];
+      }
       state.redis.delete(codeKey);
       state.attempts.delete(attemptsKey);
-      return 1;
+      state.redisExpiry.delete(codeKey);
+      state.redisExpiry.delete(attemptsKey);
+      return [1, 0];
     },
   );
   t.mock.method(
@@ -218,6 +252,23 @@ const runAuthApi = async (t: TestContext) => {
       );
     },
   );
+  const rateLimitSettings = [
+    "AUTH_LIMIT",
+    "SIGNUP_LIMIT",
+    "SIGNIN_LIMIT",
+    "GOOGLE_AUTH_LIMIT",
+    "OTP_VERIFY_LIMIT",
+    "OTP_RESEND_LIMIT",
+    "PASSWORD_RESET_REQUEST_LIMIT",
+    "PASSWORD_RESET_LIMIT",
+    "PASSWORD_CHANGE_LIMIT",
+    "ADMIN_SETUP_LIMIT",
+  ];
+  const previousRateLimitSettings = new Map(
+    rateLimitSettings.map((key) => [key, process.env[key]]),
+  );
+  for (const key of rateLimitSettings) process.env[key] = "1000";
+
   const authRoutes =
     (require("../src/routes/auth.routes") as typeof import("../src/routes/auth.routes")).default;
   const app = express();
@@ -237,6 +288,10 @@ const runAuthApi = async (t: TestContext) => {
     });
     pool.query = originalQuery;
     nodemailer.createTransport = originalCreateTransport;
+    for (const [key, value] of previousRateLimitSettings) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   });
 
   const address = server.address() as AddressInfo;
@@ -280,6 +335,7 @@ const runAuthApi = async (t: TestContext) => {
 const readBody = async (response: Response) =>
   (await response.json()) as {
     message: string;
+    code?: string;
     data: Record<string, unknown> | null;
   };
 
@@ -291,7 +347,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
   const originalPassword = "InitialPass123!";
   const verificationEmail = "verify@example.com";
 
-  await t.test("registration and verified-account duplicate handling", async () => {
+  await t.test("registration and existing-account duplicate handling", async () => {
     const response = await api.request("/auth/signup", {
       method: "POST",
       body: {
@@ -301,10 +357,12 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       },
     });
     assert.equal(response.status, 201);
-    assert.deepEqual((await readBody(response)).data, {
-      id: 1,
-      email: verificationEmail,
-    });
+    const signupBody = await readBody(response);
+    assert.equal(signupBody.code, "OTP_SENT");
+    assert.equal(signupBody.data?.id, 1);
+    assert.equal(signupBody.data?.otpSent, true);
+    assert.equal(signupBody.data?.requiresVerification, true);
+    assert.equal(signupBody.data?.nextStep, "verify-otp");
     const verificationEmailSent = api.state.emails[0];
     assert.equal(verificationEmailSent.purpose, "verification");
     assert.equal(verificationEmailSent.subject, "Verify your REKÒ account");
@@ -319,7 +377,12 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
         password: "ReplacementPass123!",
       },
     });
-    assert.equal(reRegistration.status, 201);
+    assert.equal(reRegistration.status, 409);
+    const unverifiedDuplicate = await readBody(reRegistration);
+    assert.equal(unverifiedDuplicate.code, "EMAIL_REQUIRES_VERIFICATION");
+    assert.equal(unverifiedDuplicate.data?.accountVerified, false);
+    assert.equal(unverifiedDuplicate.data?.canRequestOtp, true);
+    assert.equal(unverifiedDuplicate.data?.nextStep, "resend-otp");
     assert.equal(api.state.emails.length, 1);
     assert.equal(api.state.users.get(verificationEmail)?.name, "Original User");
     assert.equal(
@@ -335,12 +398,18 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: verificationEmail },
     });
     assert.equal(resendDuringCooldown.status, 429);
+    const cooldownBody = await readBody(resendDuringCooldown);
+    assert.equal(cooldownBody.code, "OTP_COOLDOWN");
+    assert.equal(cooldownBody.data?.cooldownActive, true);
+    assert.equal(cooldownBody.data?.otpAlreadySent, null);
+    assert.ok(Number(cooldownBody.data?.retryAfterSeconds) > 0);
 
     const verified = await api.request("/auth/verify-otp", {
       method: "POST",
       body: { email: verificationEmail, otp },
     });
     assert.equal(verified.status, 200);
+    assert.equal((await readBody(verified)).code, "EMAIL_VERIFIED");
     assert.equal(
       api.state.users.get(verificationEmail)?.is_verified,
       true,
@@ -355,12 +424,15 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       },
     });
     assert.equal(duplicate.status, 409);
+    assert.equal((await readBody(duplicate)).code, "EMAIL_ALREADY_EXISTS");
+    assert.equal(api.state.emails.length, 1);
 
     const reusedOtp = await api.request("/auth/verify-otp", {
       method: "POST",
       body: { email: verificationEmail, otp },
     });
     assert.equal(reusedOtp.status, 400);
+    assert.equal((await readBody(reusedOtp)).code, "OTP_EXPIRED");
   });
 
   await t.test("expired and over-attempt OTPs are rejected", async () => {
@@ -376,6 +448,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: expiredEmail, otp: expiredOtp },
     });
     assert.equal(expired.status, 400);
+    assert.equal((await readBody(expired)).code, "OTP_EXPIRED");
 
     const limitedEmail = "limited@example.com";
     await api.request("/auth/signup", {
@@ -390,12 +463,17 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
         body: { email: limitedEmail, otp: invalidOtp },
       });
       assert.equal(invalid.status, 400);
+      assert.equal((await readBody(invalid)).code, "INVALID_OTP");
     }
     const rejectedValidCode = await api.request("/auth/verify-otp", {
       method: "POST",
       body: { email: limitedEmail, otp: limitedOtp },
     });
-    assert.equal(rejectedValidCode.status, 400);
+    assert.equal(rejectedValidCode.status, 429);
+    assert.equal(
+      (await readBody(rejectedValidCode)).code,
+      "OTP_ATTEMPTS_EXCEEDED",
+    );
   });
 
   await t.test("password recovery uses a distinct OTP and revokes sessions", async () => {
@@ -404,6 +482,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: verificationEmail, password: originalPassword },
     });
     assert.equal(login.status, 200);
+    assert.equal((await readBody(login)).code, "LOGIN_SUCCESS");
     const oldSession = responseCookie(login);
 
     const forgot = await api.request("/auth/forgot-password", {
@@ -411,6 +490,23 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: verificationEmail },
     });
     assert.equal(forgot.status, 200);
+    const forgotBody = await readBody(forgot);
+    assert.equal(forgotBody.code, "PASSWORD_RESET_REQUEST_ACCEPTED");
+    assert.equal(forgotBody.data?.otpSent, null);
+
+    const unknownForgot = await api.request("/auth/forgot-password", {
+      method: "POST",
+      body: { email: "unknown@example.com" },
+    });
+    assert.equal(unknownForgot.status, 200);
+    assert.deepEqual(await readBody(unknownForgot), forgotBody);
+
+    const repeatedForgot = await api.request("/auth/forgot-password", {
+      method: "POST",
+      body: { email: verificationEmail },
+    });
+    assert.equal(repeatedForgot.status, 200);
+    assert.deepEqual(await readBody(repeatedForgot), forgotBody);
     const recovery = api.state.emails.at(-1)!;
     assert.equal(recovery.purpose, "password-reset");
     assert.equal(recovery.subject, "Reset your REKÒ password");
@@ -422,6 +518,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: verificationEmail, otp: recovery.otp },
     });
     assert.equal(wrongPurpose.status, 400);
+    assert.equal((await readBody(wrongPurpose)).code, "OTP_EXPIRED");
 
     const reset = await api.request("/auth/reset-password", {
       method: "POST",
@@ -432,6 +529,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       },
     });
     assert.equal(reset.status, 200);
+    assert.equal((await readBody(reset)).code, "PASSWORD_RESET");
 
     const staleSession = await api.request("/auth/me", { cookie: oldSession });
     assert.equal(staleSession.status, 401);
@@ -493,7 +591,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       },
     });
     assert.equal(changed.status, 200);
-    assert.equal((await readBody(changed)).message, "Password changed successfully");
+    assert.equal((await readBody(changed)).code, "PASSWORD_CHANGED");
 
     const revokedAliceSession = await api.request("/auth/me", {
       cookie: aliceFirstCookie,
@@ -529,7 +627,7 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
     assert.equal(aliceStillAuthenticated.status, 200);
   });
 
-  await t.test("email and database failures return server errors and permit retry", async () => {
+  await t.test("recovery delivery failures remain private and can be retried", async () => {
     const retryEmail = "retry@example.com";
     await api.addUser(retryEmail, originalPassword);
     api.state.failEmail = true;
@@ -537,7 +635,11 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       method: "POST",
       body: { email: retryEmail },
     });
-    assert.equal(failedDelivery.status, 500);
+    assert.equal(failedDelivery.status, 200);
+    assert.equal(
+      (await readBody(failedDelivery)).code,
+      "PASSWORD_RESET_REQUEST_ACCEPTED",
+    );
     assert.equal(
       api.state.redis.has(otpKey("password-reset", retryEmail)),
       false,
@@ -548,6 +650,10 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
       body: { email: retryEmail },
     });
     assert.equal(retry.status, 200);
+    assert.equal(
+      api.state.emails.filter((email) => email.email === retryEmail).length,
+      2,
+    );
 
     api.state.failNextQuery = true;
     const databaseFailure = await api.request("/auth/forgot-password", {

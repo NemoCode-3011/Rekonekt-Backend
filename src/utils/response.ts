@@ -5,6 +5,8 @@ export const sendResponse = (
   statusCode: number,
   message: string,
   data: unknown = null,
+  code?: string,
 ) => {
-  return res.status(statusCode).json({ message, data });
+  const body = code ? { code, message, data } : { message, data };
+  return res.status(statusCode).json(body);
 };

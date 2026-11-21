@@ -1,5 +1,13 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
+const authResponseContent = {
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/AuthResponse" },
+    },
+  },
+};
+
 const contentAdminPaths = (tag: string, base: string) => ({
   [`/${base}/admin`]: {
     get: {
@@ -154,7 +162,7 @@ const options = {
           tags: ["Authentication"],
           summary: "Create a visitor account",
           description:
-            "An existing unverified account keeps its current credentials and can receive another verification code after the cooldown. A verified account returns 409.",
+            "A new account returns 201 with OTP_SENT. Existing verified and unverified accounts return 409 with EMAIL_ALREADY_EXISTS or EMAIL_REQUIRES_VERIFICATION. Repeated signup never sends another OTP; use /auth/resend-otp to continue an existing verification.",
           requestBody: {
             required: true,
             content: {
@@ -184,15 +192,27 @@ const options = {
           },
           responses: {
             201: {
-              description: "Signup successful",
+              description:
+                "OTP_SENT. Data includes otpSent, expiresInSeconds, resendAfterSeconds, and nextStep.",
+              ...authResponseContent,
             },
             400: {
               description: "Invalid input",
+              ...authResponseContent,
             },
             409: {
-              description: "Email already exists",
+              description:
+                "EMAIL_ALREADY_EXISTS or EMAIL_REQUIRES_VERIFICATION. The data identifies accountVerified and nextStep.",
+              ...authResponseContent,
             },
-            429: { description: "Too many signup attempts from this IP" },
+            429: {
+              description: "OTP_COOLDOWN or RATE_LIMITED",
+              ...authResponseContent,
+            },
+            503: {
+              description: "OTP_DELIVERY_FAILED or RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
+            },
           },
         },
       },
@@ -225,13 +245,20 @@ const options = {
           },
           responses: {
             200: {
-              description: "Email verified successfully",
+              description: "EMAIL_VERIFIED",
+              ...authResponseContent,
             },
             400: {
-              description: "Invalid OTP or input",
+              description: "INVALID_OTP, OTP_EXPIRED, or VALIDATION_ERROR",
+              ...authResponseContent,
             },
             429: {
-              description: "Too many OTP verification attempts",
+              description: "OTP_ATTEMPTS_EXCEEDED or RATE_LIMITED",
+              ...authResponseContent,
+            },
+            503: {
+              description: "RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
             },
           },
         },
@@ -266,10 +293,20 @@ const options = {
           },
           responses: {
             200: {
-              description: "Signin successful",
+              description: "LOGIN_SUCCESS",
+              ...authResponseContent,
             },
             401: {
-              description: "Invalid credentials",
+              description: "INVALID_CREDENTIALS",
+              ...authResponseContent,
+            },
+            403: {
+              description: "EMAIL_NOT_VERIFIED",
+              ...authResponseContent,
+            },
+            503: {
+              description: "RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
             },
           },
         },
@@ -328,14 +365,22 @@ const options = {
           },
           responses: {
             200: {
-              description: "OTP resent successfully",
+              description:
+                "OTP_REQUEST_ACCEPTED. Response is intentionally generic to avoid account enumeration.",
+              ...authResponseContent,
             },
             400: {
               description: "Invalid request",
+              ...authResponseContent,
             },
             429: {
               description:
-                "Verification resend cooldown or too many requests from this IP",
+                "OTP_COOLDOWN or RATE_LIMITED. OTP_COOLDOWN data includes retryAfterSeconds.",
+              ...authResponseContent,
+            },
+            503: {
+              description: "OTP_DELIVERY_FAILED or RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
             },
           },
         },
@@ -366,9 +411,14 @@ const options = {
           responses: {
             200: {
               description:
-                "Password reset request accepted. The email is purpose-specific; unknown emails receive the same response.",
+                "PASSWORD_RESET_REQUEST_ACCEPTED. Response data is identical for unknown emails, cooldowns, and eligible accounts.",
+              ...authResponseContent,
             },
-            429: { description: "Too many password recovery attempts" },
+            429: { description: "RATE_LIMITED", ...authResponseContent },
+            503: {
+              description: "RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
+            },
           },
         },
       },
@@ -406,10 +456,66 @@ const options = {
           },
           responses: {
             200: {
-              description: "Password reset successfully",
+              description: "PASSWORD_RESET",
+              ...authResponseContent,
             },
-            400: { description: "Invalid or expired reset code" },
-            429: { description: "Too many password reset attempts" },
+            400: {
+              description: "INVALID_OTP, OTP_EXPIRED, or VALIDATION_ERROR",
+              ...authResponseContent,
+            },
+            429: {
+              description: "OTP_ATTEMPTS_EXCEEDED or RATE_LIMITED",
+              ...authResponseContent,
+            },
+            503: {
+              description: "RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
+            },
+          },
+        },
+      },
+
+      "/auth/change-password": {
+        post: {
+          tags: ["Authentication"],
+          summary: "Change the current user's password",
+          security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["currentPassword", "newPassword"],
+                  properties: {
+                    currentPassword: { type: "string", format: "password" },
+                    newPassword: { type: "string", format: "password" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "PASSWORD_CHANGED",
+              ...authResponseContent,
+            },
+            400: {
+              description: "CURRENT_PASSWORD_INCORRECT or VALIDATION_ERROR",
+              ...authResponseContent,
+            },
+            401: {
+              description: "Authentication required",
+              ...authResponseContent,
+            },
+            429: {
+              description: "RATE_LIMITED",
+              ...authResponseContent,
+            },
+            503: {
+              description: "RATE_LIMIT_STORE_UNAVAILABLE",
+              ...authResponseContent,
+            },
           },
         },
       },
@@ -2284,7 +2390,24 @@ const options = {
           required: ["message", "data"],
           properties: {
             message: { type: "string" },
-            data: { type: "object", nullable: true, description: "Null for errors." },
+            code: {
+              type: "string",
+              description: "Stable machine-readable code when provided.",
+            },
+            data: {
+              type: "object",
+              nullable: true,
+              description: "Additional response or error details, when present.",
+            },
+          },
+        },
+        AuthResponse: {
+          type: "object",
+          required: ["code", "message", "data"],
+          properties: {
+            code: { type: "string" },
+            message: { type: "string" },
+            data: { type: "object", nullable: true },
           },
         },
         PersonRecord: {

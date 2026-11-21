@@ -33,12 +33,62 @@ import {
   clearSessionCookieOptions,
 } from "../utils/cookies";
 
+const authErrorStatus: Record<string, number> = {
+  EMAIL_ALREADY_EXISTS: 409,
+  EMAIL_REQUIRES_VERIFICATION: 409,
+  EMAIL_NOT_VERIFIED: 403,
+  INVALID_CREDENTIALS: 401,
+  INVALID_OTP: 400,
+  OTP_EXPIRED: 400,
+  OTP_ATTEMPTS_EXCEEDED: 429,
+  OTP_COOLDOWN: 429,
+  OTP_DELIVERY_FAILED: 503,
+  CURRENT_PASSWORD_INCORRECT: 400,
+  USER_NOT_FOUND: 404,
+};
+
+const sendAuthResponse = (
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+  data: unknown = null,
+) => sendResponse(res, status, message, data, code);
+
+const sendAuthError = (res: Response, error: unknown) => {
+  if (error instanceof AuthServiceError) {
+    return sendAuthResponse(
+      res,
+      authErrorStatus[error.code] ?? 500,
+      error.code,
+      error.message,
+      error.details,
+    );
+  }
+
+  const errorName = error instanceof Error ? error.name : "UnknownError";
+  const errorCode =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "UNEXPECTED_ERROR";
+  console.error("Authentication request failed", { errorName, errorCode });
+  return sendAuthResponse(res, 500, "INTERNAL_ERROR", "Internal server error");
+};
+
 export const signUpController = async (req: Request, res: Response) => {
   try {
     const validation = signupSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const { name, email, password, preferredLanguage } = validation.data;
@@ -50,16 +100,15 @@ export const signUpController = async (req: Request, res: Response) => {
       preferredLanguage,
     });
 
-    return sendResponse(res, 201, "User created successfully", user);
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "EMAIL_ALREADY_EXISTS"
-    ) {
-      return sendResponse(res, 409, error.message);
-    }
-    console.log(error.message || error);
-    return sendResponse(res, 500, "Internal server error");
+    return sendAuthResponse(
+      res,
+      201,
+      "OTP_SENT",
+      "Verification code sent",
+      user,
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
@@ -68,25 +117,26 @@ export const verifyOtpController = async (req: Request, res: Response) => {
     const validation = verifyOtpSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const { email, otp } = validation.data;
     const results = await verifyOtpService({ email, otp });
 
-    return sendResponse(res, 200, "OTP verified successfully", results);
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "INVALID_OTP"
-    ) {
-      return sendResponse(res, 400, error.message);
-    }
-    if (error instanceof AuthServiceError && error.code === "USER_NOT_FOUND") {
-      return sendResponse(res, 404, error.message);
-    }
-    console.log(error.message || error);
-    return sendResponse(res, 500, "internal server error");
+    return sendAuthResponse(
+      res,
+      200,
+      "EMAIL_VERIFIED",
+      "OTP verified successfully",
+      results,
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
@@ -95,7 +145,12 @@ export const signInController = async (req: Request, res: Response) => {
     const validation = signInSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const { email, password } = validation.data;
@@ -105,7 +160,7 @@ export const signInController = async (req: Request, res: Response) => {
     });
     res.cookie("sessionId", results.sessionId, sessionCookieOptions);
 
-    return sendResponse(res, 200, "Login successful", {
+    return sendAuthResponse(res, 200, "LOGIN_SUCCESS", "Login successful", {
       id: results.id,
       name: results.name,
       email: results.email,
@@ -113,24 +168,8 @@ export const signInController = async (req: Request, res: Response) => {
       preferred_language: results.preferred_language,
       is_verified: results.is_verified,
     });
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "INVALID_CREDENTIALS"
-    ) {
-      return sendResponse(res, 401, error.message);
-    }
-
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "EMAIL_NOT_VERIFIED"
-    ) {
-      return sendResponse(res, 403, error.message);
-    }
-
-    console.log(error.message || error);
-
-    return sendResponse(res, 500, "Internal server error");
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
@@ -178,7 +217,12 @@ export const createAdminController = async (req: Request, res: Response) => {
   try {
     const validation = createAdminSchema.safeParse(req.body);
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const results = await createAdminService(validation.data);
@@ -236,17 +280,15 @@ export const resendOtpController = async (req: Request, res: Response) => {
 
     const result = await resendOtpService(email);
 
-    return sendResponse(res, 200, "Verification OTP sent successfully", result);
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "OTP_COOLDOWN"
-    ) {
-      return sendResponse(res, 429, error.message);
-    }
-
-    console.log(error.message || error);
-    return sendResponse(res, 500, "Internal server error");
+    return sendAuthResponse(
+      res,
+      200,
+      "OTP_REQUEST_ACCEPTED",
+      "If verification is needed, check your email",
+      result,
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
@@ -255,16 +297,26 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     const validation = resendOtpSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const { email } = validation.data;
-    await forgotPasswordService(email);
+    const result = await forgotPasswordService(email);
 
-    return sendResponse(res, 200, "Password reset OTP sent successfully");
-  } catch (error: any) {
-    console.log(error.message || error);
-    return sendResponse(res, 500, "Internal server error");
+    return sendAuthResponse(
+      res,
+      200,
+      "PASSWORD_RESET_REQUEST_ACCEPTED",
+      "If the account exists, a reset code will be sent if eligible",
+      result,
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
@@ -273,23 +325,27 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     const validation = resetPasswordSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const { email, otp, newPassword } = validation.data;
 
     const result = await resetPasswordService(email, otp, newPassword);
 
-    return sendResponse(res, 200, "Password reset successfully", result);
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      (error.code === "INVALID_OTP" || error.code === "USER_NOT_FOUND")
-    ) {
-      return sendResponse(res, 400, error.message);
-    }
-    console.log(error.message || error);
-    return sendResponse(res, 500, "Internal server error");
+    return sendAuthResponse(
+      res,
+      200,
+      "PASSWORD_RESET",
+      "Password reset successfully",
+      result,
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 export const updateProfileController = async (req: Request, res: Response) => {
@@ -301,7 +357,12 @@ export const updateProfileController = async (req: Request, res: Response) => {
     const validation = updateProfileSchema.safeParse(req.body);
 
     if (!validation.success) {
-      return sendResponse(res, 400, validation.error.issues[0].message);
+      return sendAuthResponse(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        validation.error.issues[0].message,
+      );
     }
 
     const user = await updateProfileService(req.userId, validation.data);
@@ -340,22 +401,14 @@ export const changePasswordController = async (req: Request, res: Response) => {
       validation.data.newPassword,
       req.cookies.sessionId,
     );
-    return sendResponse(res, 200, "Password changed successfully");
-  } catch (error: any) {
-    if (
-      error instanceof AuthServiceError &&
-      error.code === "CURRENT_PASSWORD_INCORRECT"
-    ) {
-      return sendResponse(res, 400, error.message);
-    }
-
-    if (error instanceof AuthServiceError && error.code === "USER_NOT_FOUND") {
-      return sendResponse(res, 404, error.message);
-    }
-
-    console.log(error.message || error);
-
-    return sendResponse(res, 500, "Internal server error");
+    return sendAuthResponse(
+      res,
+      200,
+      "PASSWORD_CHANGED",
+      "Password changed successfully",
+    );
+  } catch (error) {
+    return sendAuthError(res, error);
   }
 };
 
