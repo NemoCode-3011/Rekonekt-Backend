@@ -99,6 +99,7 @@ The checked-in [`.env.example`](./.env.example) lists the configuration keys use
 | `CLIENT_URL` | Allowed frontend origin for CORS and state-changing browser requests |
 | `CROSS_SITE_COOKIES` | Set to `true` only when the frontend and API are cross-site; requires HTTPS |
 | `DB_USER`, `DB_HOST`, `DB_PASSWORD`, `DB_PORT`, `DB_NAME` | PostgreSQL connection |
+| `DB_SSL` | Set to `true` for TLS connections to hosted PostgreSQL (for example, Neon); defaults to `false` for local Docker PostgreSQL |
 | `REDIS_URL` | Redis connection string |
 | `SUPER_ADMIN_NAME`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD` | Initial admin seed configuration |
 | `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | S3-compatible media storage |
