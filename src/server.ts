@@ -42,7 +42,7 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 
-const clientUrl = process.env.CLIENT_URL ?? "http://localhost:5173";
+const clientUrl = process.env.CLIENT_URL ?? "https://reko-tan.vercel.app/";
 app.use(
   cors({
     origin: clientUrl,
