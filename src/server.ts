@@ -34,6 +34,7 @@ import cors from "cors";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
 import { publicReadLimiter } from "@middleware/rateLimit.middleware";
 import { verifyRequestOrigin } from "@middleware/requestOrigin.middleware";
+import { normalizeClientOrigin } from "@config/clientOrigin";
 
 dotenv.config();
 
@@ -42,7 +43,9 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 
-const clientUrl = process.env.CLIENT_URL ?? "https://reko-tan.vercel.app/";
+const clientUrl = normalizeClientOrigin(
+  process.env.CLIENT_URL ?? "https://reko-tan.vercel.app/",
+);
 app.use(
   cors({
     origin: clientUrl,

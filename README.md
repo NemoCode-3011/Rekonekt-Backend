@@ -113,6 +113,15 @@ External-service credentials are only needed for the integrations you configure.
 
 State-changing browser requests must send an `Origin` matching `CLIENT_URL`. Requests without an `Origin` header remain supported for server-to-server clients.
 
+### Render and Vercel deployment checks
+
+- Set `CLIENT_URL` to the deployed frontend URL (for example, `https://reko-tan.vercel.app`). The API normalizes paths and trailing slashes to the origin used by browser CORS and write-origin checks.
+- Set `CROSS_SITE_COOKIES=true` when the frontend and API use different sites, such as `vercel.app` and `onrender.com`. In production, the session cookie is then `SameSite=None; Secure; HttpOnly`.
+- The frontend must send credentialed requests (for `fetch`, use `credentials: "include"`; for Axios, use `withCredentials: true`) for login cookies to be saved and sent.
+- Configure hosted `DB_*` values and a reachable hosted `REDIS_URL`. Redis is required for sessions, OTPs, and rate limits; a local Docker Redis URL will not work from Render.
+- Cross-site cookie settings cannot override browser third-party-cookie restrictions. For reliable Safari/iPhone sessions, use frontend and API custom domains under the same site where possible (for example, `app.example.com` and `api.example.com`).
+- A sleeping Render instance can delay the first request while it starts. The API cannot remove that platform cold start; use an always-on service plan or have the client tolerate/retry startup delays.
+
 Authentication and public-read rate limits use Redis with a separate key prefix per action. Every API instance must use the same reachable `REDIS_URL` for limits to be shared. If Redis is unavailable, rate-limited requests fail closed with `503 RATE_LIMIT_STORE_UNAVAILABLE`. Limits are keyed by client IP; OTP codes and cooldowns are additionally isolated by email and purpose.
 
 ## Authentication response codes
