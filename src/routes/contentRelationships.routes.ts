@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 import {
   optionalSession,
   verifyUser,
-} from "src/middleware/auth.middleware";
+} from "../middleware/auth.middleware";
 import {
   createSectionPersonController,
   createSectionPlaceController,

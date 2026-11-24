@@ -4,7 +4,7 @@ import {
   getAdminPlacesByEventQuery,
   getPlacesByEventQuery,
   removeEventPlaceQuery,
-} from "src/model/eventPlaces.queries";
+} from "../model/eventPlaces.queries";
 
 export const addEventPlace = async (eventId: number, placeId: number) => {
   const result = await pool.query(addEventPlaceQuery, [eventId, placeId]);

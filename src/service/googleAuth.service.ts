@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import googleClient from "src/config/google";
+import googleClient from "../config/google";
 import { pool } from "../database/db";
 import { createSession, deleteUserSessions } from "../utils/sessions";
 import { hashPassword } from "../utils/password";
@@ -9,7 +9,7 @@ import {
   linkGoogleAccountQuery,
   createGoogleUserQuery,
   updateUserPasswordByIdQuery,
-} from "src/model/auth.queries";
+} from "../model/auth.queries";
 
 // Google users never type a password, so their account gets a random one.
 const randomPasswordHash = () =>

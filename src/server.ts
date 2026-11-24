@@ -1,40 +1,41 @@
 import dotenv from "dotenv";
 import express from "express";
 import { Application, Request, Response } from "express";
-import { createTables, isDBConnected } from "../src/database/db";
-import authRoutes from "../src/routes/auth.routes";
-import { connectRedis } from "@config/redis";
+import { createTables, isDBConnected } from "./database/db";
+import authRoutes from "./routes/auth.routes";
+import { connectRedis } from "./config/redis";
 import cookieParser from "cookie-parser";
-import adminRoutes from "../src/routes/admin.routes";
-import exhibitRoutes from "../src/routes/exhibitions.routes";
-import sectionRoutes from "../src/routes/sections.routes";
-import storyRoutes from "../src/routes/stories.routes";
-import eventRoutes from "../src/routes/event.routes";
-import personRoutes from "../src/routes/people.routes";
-import placeRoutes from "../src/routes/places.routes";
-import eventPeopleRoutes from "../src/routes/eventPeople.routes";
-import eventMediaRoutes from "../src/routes/eventMedia.routes";
-import eventPlaceRoutes from "../src/routes/eventPlace.routes";
-import artifactRoutes from "../src/routes/artifacts.routes";
-import mediaRoutes from "../src/routes/media.routes";
-import mediaAttachmentRoutes from "../src/routes/mediaAttachment.routes";
-import sourceRoutes from "../src/routes/source.routes";
-import sourceLinkRoutes from "src/routes/sourceLink.routes";
-import bookmarkRoutes from "src/routes/bookmarks.routes";
-import noteRoutes from "src/routes/note.routes";
-import progressRoutes from "src/routes/progress.routes";
-import googleAuthRoutes from "src/routes/googleAuth.routes";
-import searchRoutes from "src/routes/search.routes";
-import contentRelationshipRoutes from "src/routes/contentRelationships.routes";
-import experienceRoutes from "src/routes/experience.routes";
-import culturalGroupRoutes from "../src/routes/culturalGroups.routes";
+import adminRoutes from "./routes/admin.routes";
+import exhibitRoutes from "./routes/exhibitions.routes";
+import sectionRoutes from "./routes/sections.routes";
+import storyRoutes from "./routes/stories.routes";
+import eventRoutes from "./routes/event.routes";
+import personRoutes from "./routes/people.routes";
+import placeRoutes from "./routes/places.routes";
+import eventPeopleRoutes from "./routes/eventPeople.routes";
+import eventMediaRoutes from "./routes/eventMedia.routes";
+import eventPlaceRoutes from "./routes/eventPlace.routes";
+import artifactRoutes from "./routes/artifacts.routes";
+import mediaRoutes from "./routes/media.routes";
+import mediaAttachmentRoutes from "./routes/mediaAttachment.routes";
+import sourceRoutes from "./routes/source.routes";
+import sourceLinkRoutes from "./routes/sourceLink.routes";
+import bookmarkRoutes from "./routes/bookmarks.routes";
+import noteRoutes from "./routes/note.routes";
+import progressRoutes from "./routes/progress.routes";
+import googleAuthRoutes from "./routes/googleAuth.routes";
+import searchRoutes from "./routes/search.routes";
+import contentRelationshipRoutes from "./routes/contentRelationships.routes";
+import experienceRoutes from "./routes/experience.routes";
+import culturalGroupRoutes from "./routes/culturalGroups.routes";
 import swaggerUi from "swagger-ui-express";
-import swaggerSpec from "../src/docs/swagger";
+import swaggerSpec from "./docs/swagger";
 import cors from "cors";
-import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
-import { publicReadLimiter } from "@middleware/rateLimit.middleware";
-import { verifyRequestOrigin } from "@middleware/requestOrigin.middleware";
-import { getClientUrl } from "@config/clientOrigin";
+import helmet from "helmet";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { publicReadLimiter } from "./middleware/rateLimit.middleware";
+import { verifyRequestOrigin } from "./middleware/requestOrigin.middleware";
+import { getClientUrl } from "./config/clientOrigin";
 
 dotenv.config();
 
@@ -45,14 +46,28 @@ const app: Application = express();
 const proxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? "", 10);
 app.set("trust proxy", Number.isInteger(proxyHops) && proxyHops >= 0 ? proxyHops : 2);
 
-// Temporary check: set LOG_CLIENT_IP=true on Render, visit the site, then read
-// the logs. "ip" should be your own address, not a Vercel one.
+//to check if correct ip
 if (process.env.LOG_CLIENT_IP === "true") {
   app.use((req, _res, next) => {
-    console.log("client ip:", req.ip, "forwarded chain:", req.ips);
+    console.log(
+      "client ip:",
+      req.ip,
+      "| x-forwarded-for:",
+      req.headers["x-forwarded-for"],
+      "| x-vercel-forwarded-for:",
+      req.headers["x-vercel-forwarded-for"],
+    );
     next();
   });
 }
+
+// API docs list every route, so keep them off in production unless asked for.
+const docsEnabled =
+  process.env.NODE_ENV !== "production" ||
+  process.env.ENABLE_API_DOCS === "true";
+
+// Standard security headers. Swagger UI needs inline scripts
+app.use(helmet({ contentSecurityPolicy: docsEnabled ? false : undefined }));
 
 app.use(express.json());
 
@@ -75,15 +90,11 @@ app.get("/health", (_req: Request, res: Response) => {
 
 app.use(cookieParser());
 
-// API docs list every route, so keep them off in production unless asked for.
-if (
-  process.env.NODE_ENV !== "production" ||
-  process.env.ENABLE_API_DOCS === "true"
-) {
+if (docsEnabled) {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
-// Public reading needs no account, so cap how fast one IP can read.
+
 app.use(publicReadLimiter);
 
 app.use("/auth", authRoutes);
@@ -111,7 +122,7 @@ app.use("/experiences", experienceRoutes);
 app.use("/", contentRelationshipRoutes);
 app.use("/cultural-groups", culturalGroupRoutes);
 
-// Must come after every route.
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -122,7 +133,7 @@ process.on("unhandledRejection", (reason) => {
 const start = async () => {
   try {
     await connectRedis();
-    // Safe to run on every start: every statement is IF NOT EXISTS.
+    
     await createTables();
     
     app.listen(port, () => {

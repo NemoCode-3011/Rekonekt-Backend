@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCulturalGroupsController } from "src/controller/culturalGroups.controller";
+import { getCulturalGroupsController } from "../controller/culturalGroups.controller";
 
 const router = Router();
 

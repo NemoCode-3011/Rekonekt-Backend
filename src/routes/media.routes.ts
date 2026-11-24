@@ -7,13 +7,13 @@ import {
   updateMediaController,
   deleteMediaController,
   uploadMediaController,
-} from "src/controller/media.controller";
+} from "../controller/media.controller";
 import {
   optionalSession,
   verifyUser,
-} from "src/middleware/auth.middleware";
-import { uploadMediaFile } from "@middleware/upload.middleware";
-import { requireRole } from "@middleware/authorize";
+} from "../middleware/auth.middleware";
+import { uploadMediaFile } from "../middleware/upload.middleware";
+import { requireRole } from "../middleware/authorize";
 
 const router = Router();
 

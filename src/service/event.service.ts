@@ -1,4 +1,4 @@
-import { pool } from "src/database/db";
+import { pool } from "../database/db";
 
 import {
   createEventQuery,
@@ -7,7 +7,7 @@ import {
   updateEventQuery,
   deleteEventQuery,
   getPublishedEventsQuery,
-} from "src/model/event.queries";
+} from "../model/event.queries";
 
 export const createEventService = async (data: {
   sectionId: number | null;

@@ -5,8 +5,8 @@ import {
   getProgressByExhibitionController,
   updateProgressController,
   deleteProgressController,
-} from "src/controller/progress.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+} from "../controller/progress.controller";
+import { verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
 

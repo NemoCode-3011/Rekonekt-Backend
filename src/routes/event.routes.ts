@@ -1,4 +1,4 @@
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 import { Router } from "express";
 import {
   createEventController,
@@ -7,11 +7,11 @@ import {
   getPublishedEventsController,
   updateEventController,
   deleteEventController,
-} from "src/controller/event.controller";
+} from "../controller/event.controller";
 import {
   optionalSession,
   verifyUser,
-} from "src/middleware/auth.middleware";
+} from "../middleware/auth.middleware";
 import { createAdminContentController } from "../controller/adminContent.controller";
 
 

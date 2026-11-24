@@ -7,9 +7,9 @@ import {
   updateArtifactController,
   deleteArtifactController,
 } from "../controller/artifacts.controller";
-import { optionalSession, verifyUser } from "src/middleware/auth.middleware";
-import { requireRole } from "@middleware/authorize";
-import { createAdminContentController } from "src/controller/adminContent.controller";
+import { optionalSession, verifyUser } from "../middleware/auth.middleware";
+import { requireRole } from "../middleware/authorize";
+import { createAdminContentController } from "../controller/adminContent.controller";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 
 import {
   createEventService,
@@ -8,11 +8,11 @@ import {
   updateEventService,
   deleteEventService,
   getPublishedEventsService,
-} from "src/service/event.service";
+} from "../service/event.service";
 import {
   createEventSchema,
   updateEventSchema,
-} from "src/validation/event.schema";
+} from "../validation/event.schema";
 
 export const createEventController = async (req: Request, res: Response) => {
   try {

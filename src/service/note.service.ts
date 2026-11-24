@@ -5,7 +5,7 @@ import {
   getNoteByIdQuery,
   updateNoteQuery,
   deleteNoteQuery,
-} from "src/model/note.queries";
+} from "../model/note.queries";
 
 export const createNoteService = async (
   userId: number,

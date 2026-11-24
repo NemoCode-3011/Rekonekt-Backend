@@ -1,4 +1,4 @@
-import { pool } from "src/database/db";
+import { pool } from "../database/db";
 import {
   getPublishedExhibitionsQuery,
   getAdminExhibitionsQuery,
@@ -8,7 +8,7 @@ import {
   deleteExhibitionQuery,
   updateExhibitionQuery,
   unpublishExhibitionQuery,
-} from "src/model/exhibition.queries";
+} from "../model/exhibition.queries";
 
 export const getPublishedExhibitionsService = async () => {
   const result = await pool.query(getPublishedExhibitionsQuery);

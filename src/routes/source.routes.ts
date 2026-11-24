@@ -5,9 +5,9 @@ import {
   getSourceByIdController,
   getSourcesController,
   updateSourceController,
-} from "src/controller/source.controller";
-import { requireRole } from "@middleware/authorize";
-import { optionalSession, verifyUser } from "src/middleware/auth.middleware";
+} from "../controller/source.controller";
+import { requireRole } from "../middleware/authorize";
+import { optionalSession, verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
 

@@ -5,16 +5,16 @@ import {
   getMediaById,
   updateMediaService,
   deleteMedia,
-} from "src/service/media.service";
+} from "../service/media.service";
 import { sendResponse } from "../utils/response";
-import { uploadToR2 } from "src/service/r2.service";
+import { uploadToR2 } from "../service/r2.service";
 import {
   createMediaSchema,
   createYouTubeMediaSchema,
   updateMediaSchema,
   uploadMediaSchema,
-} from "src/validation/media.schema";
-import { parseYouTubeVideoUrl } from "src/utils/youtube";
+} from "../validation/media.schema";
+import { parseYouTubeVideoUrl } from "../utils/youtube";
 
 export const createMediaController = async (req: Request, res: Response) => {
   try {

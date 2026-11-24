@@ -1,4 +1,4 @@
-import { pool } from "src/database/db";
+import { pool } from "../database/db";
 import { getCulturalGroupsQuery } from "../model/culturalGroups.queries";
 
 export const getCulturalGroupsService = async () => {

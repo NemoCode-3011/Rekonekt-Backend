@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 import {
   createProgressService,
   getProgressByUserService,
   getProgressByExhibitionService,
   updateProgressService,
   deleteProgressService,
-} from "src/service/progress.service";
+} from "../service/progress.service";
 import {
   createProgressSchema,
   updateProgressSchema,
-} from "src/validation/progress.schema";
+} from "../validation/progress.schema";
 
 export const createProgressController = async (req: Request, res: Response) => {
   try {

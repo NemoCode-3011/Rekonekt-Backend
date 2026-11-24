@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 import {
   createSourceService,
   getSources,
   getSourceById,
   updateSourceService,
   deleteSource,
-} from "src/service/source.service";
+} from "../service/source.service";
 import {
   createSourceSchema,
   updateSourceSchema,
-} from "src/validation/source.schema";
+} from "../validation/source.schema";
 
 export const createSourceController = async (req: Request, res: Response) => {
   try {

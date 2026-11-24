@@ -16,9 +16,9 @@ import {
 import {
   optionalSession,
   verifyUser,
-} from "src/middleware/auth.middleware";
-import { requireRole } from "@middleware/authorize";
-import { createAdminContentController } from "src/controller/adminContent.controller";
+} from "../middleware/auth.middleware";
+import { requireRole } from "../middleware/authorize";
+import { createAdminContentController } from "../controller/adminContent.controller";
 
 const router = Router();
 

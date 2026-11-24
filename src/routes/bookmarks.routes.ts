@@ -5,7 +5,7 @@ import {
   getBookmarkByIdController,
   deleteBookmarkController,
 } from "../controller/bookmarks.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+import { verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
 

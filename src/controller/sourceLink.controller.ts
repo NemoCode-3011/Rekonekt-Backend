@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 import {
   createSourceLinkService,
   getSourceLinks,
   getSourceLinkById,
   updateSourceLinkService,
   deleteSourceLink,
-} from "src/service/sourceLink.service";
+} from "../service/sourceLink.service";
 import {
   createSourceLinkSchema,
   updateSourceLinkSchema,
-} from "src/validation/source-link.schema";
+} from "../validation/source-link.schema";
 
 export const createSourceLinkController = async (
   req: Request,

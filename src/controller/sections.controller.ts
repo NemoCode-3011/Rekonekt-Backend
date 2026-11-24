@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 
 import {
   createSectionService,
@@ -12,7 +12,7 @@ import {
 import {
   createSectionSchema,
   updateSectionSchema,
-} from "src/validation/section.schema";
+} from "../validation/section.schema";
 
 export const createSectionController = async (req: Request, res: Response) => {
   try {

@@ -1,4 +1,4 @@
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 import { Router } from "express";
 import {
   createMediaAttachmentController,
@@ -6,8 +6,8 @@ import {
   getMediaAttachmentByIdController,
   updateMediaAttachmentController,
   deleteMediaAttachmentController,
-} from "src/controller/mediaAttachment.controller";
-import { optionalSession, verifyUser } from "src/middleware/auth.middleware";
+} from "../controller/mediaAttachment.controller";
+import { optionalSession, verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
 

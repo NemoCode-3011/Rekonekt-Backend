@@ -18,7 +18,7 @@ import {
   setupAdminPasswordQuery,
 } from "../model/auth.queries";
 import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
-import { otpGenerator } from "@utils/otpGenerator";
+import { otpGenerator } from "../utils/otpGenerator";
 import { createSession, deleteUserSessions } from "../utils/sessions";
 import { comparePassword, hashPassword } from "../utils/password";
 

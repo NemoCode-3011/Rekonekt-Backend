@@ -5,7 +5,7 @@ import {
   getProgressByExhibitionQuery,
   updateProgressQuery,
   deleteProgressQuery,
-} from "src/model/progress.queries";
+} from "../model/progress.queries";
 
 export const createProgressService = async (
   userId: number,

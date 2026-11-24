@@ -9,11 +9,11 @@ import {
   deleteExhibitionService,
   unpublishExhibitionService
 } from "../service/exhibitions.service";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 import {
   createExhibitionSchema,
   updateExhibitionSchema,
-} from "src/validation/exhibition.schema";
+} from "../validation/exhibition.schema";
 
 export const getPublishedExhibitionsController = async (
   _req: Request,

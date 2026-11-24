@@ -5,7 +5,7 @@ import {
   getSourceByIdQuery,
   updateSourceQuery,
   deleteSourceQuery,
-} from "src/model/source.queries";
+} from "../model/source.queries";
 
 export const createSourceService = async (
   title: string,

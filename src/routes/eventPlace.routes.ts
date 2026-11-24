@@ -8,8 +8,8 @@ import {
 import {
   optionalSession,
   verifyUser,
-} from "src/middleware/auth.middleware";
-import { requireRole } from "@middleware/authorize";
+} from "../middleware/auth.middleware";
+import { requireRole } from "../middleware/authorize";
 
 const router = Router();
 

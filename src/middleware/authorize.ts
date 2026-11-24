@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { pool } from "../database/db";
-import { getUserRoleQuery } from "src/model/auth.queries";
-import { sendResponse } from "src/utils/response";
+import { getUserRoleQuery } from "../model/auth.queries";
+import { sendResponse } from "../utils/response";
 
 export const requireRole = (...allowedRoles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {

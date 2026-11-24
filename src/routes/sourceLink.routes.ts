@@ -1,4 +1,4 @@
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 import { Router } from "express";
 import {
   createSourceLinkController,
@@ -6,8 +6,8 @@ import {
   getSourceLinkByIdController,
   updateSourceLinkController,
   deleteSourceLinkController,
-} from "src/controller/sourceLink.controller";
-import {verifyUser } from "src/middleware/auth.middleware";
+} from "../controller/sourceLink.controller";
+import {verifyUser } from "../middleware/auth.middleware";
 
 
 const router = Router();

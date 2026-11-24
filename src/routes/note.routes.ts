@@ -5,8 +5,8 @@ import {
   getNoteByIdController,
   updateNoteController,
   deleteNoteController,
-} from "src/controller/note.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+} from "../controller/note.controller";
+import { verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
 

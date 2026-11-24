@@ -6,7 +6,7 @@ import {
   removeEventPerson,
 } from "../service/eventPeople.service";
 import { sendResponse } from "../utils/response";
-import { addEventPersonSchema } from "src/validation/event-person.schema";
+import { addEventPersonSchema } from "../validation/event-person.schema";
 
 export const addEventPersonController = async (req: Request, res: Response) => {
   try {

@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 import {
   createNoteService,
   getNotesByUserService,
   getNoteByIdService,
   updateNoteService,
   deleteNoteService,
-} from "src/service/note.service";
+} from "../service/note.service";
 import { createNoteSchema, updateNoteSchema } from "../validation/notes.schema";
 
 export const createNoteController = async (req: Request, res: Response) => {

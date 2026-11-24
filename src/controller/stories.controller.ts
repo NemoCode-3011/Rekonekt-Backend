@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 
 import {
   createStoryService,
@@ -18,7 +18,7 @@ import {
 import {
   updateStorySchema,
   createStorySchema,
-} from "src/validation/story.schema";
+} from "../validation/story.schema";
 
 export const createStoryController = async (req: Request, res: Response) => {
   try {

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { redisClient } from "src/config/redis";
+import { redisClient } from "../config/redis";
 
 export const SESSION_TTL_SECONDS = 60 * 60 * 24;
 

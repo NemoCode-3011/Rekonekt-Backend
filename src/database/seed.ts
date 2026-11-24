@@ -26,6 +26,7 @@ const seed = async () => {
     }
   } catch (error: any) {
     console.error("Seed failed:", error.message);
+    process.exitCode = 1; // lets scripts and CI see that the seed failed
   } finally {
     await pool.end();
   }

@@ -11,7 +11,7 @@ import { sendResponse } from "../utils/response";
 import {
   updateMediaAttachmentSchema,
   createMediaAttachmentSchema,
-} from "src/validation/media-attachment.schema";
+} from "../validation/media-attachment.schema";
 
 export const createMediaAttachmentController = async (
   req: Request,

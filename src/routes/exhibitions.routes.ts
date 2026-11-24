@@ -7,10 +7,10 @@ import {
   updateExhibitionController,
   unpublishExhibitionController
 } from "../controller/exhibitions.controller";
-import { verifyUser } from "src/middleware/auth.middleware";
+import { verifyUser } from "../middleware/auth.middleware";
 import { createExhibitionController } from "../controller/exhibitions.controller";
 import {deleteExhibitionController} from "../controller/exhibitions.controller"
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 
 const router = Router();
 

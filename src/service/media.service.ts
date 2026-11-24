@@ -5,8 +5,8 @@ import {
   getMediaByIdQuery,
   updateMediaQuery,
   deleteMediaQuery,
-} from "src/model/media.queries";
-import { parseYouTubeVideoUrl } from "src/utils/youtube";
+} from "../model/media.queries";
+import { parseYouTubeVideoUrl } from "../utils/youtube";
 
 type MediaRow = {
   media_type?: string;

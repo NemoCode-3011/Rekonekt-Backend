@@ -12,7 +12,7 @@ import {
   changePasswordController,
   setupAdminPasswordController,
 } from "../controller/auth.controller";
-import { verifyUser } from "@middleware/auth.middleware";
+import { verifyUser } from "../middleware/auth.middleware";
 import {
   adminSetupLimiter,
   otpResendLimiter,

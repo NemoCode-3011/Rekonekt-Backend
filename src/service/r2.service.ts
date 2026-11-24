@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import r2 from "src/config/r2";
+import r2 from "../config/r2";
 
 export const uploadToR2 = async (file: Express.Multer.File) => {
   const publicUrl = process.env.R2_PUBLIC_URL;

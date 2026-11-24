@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
+import { sendResponse } from "../utils/response";
 
 import {
   createPersonService,
@@ -12,7 +12,7 @@ import {
 import {
   createPersonSchema,
   updatePersonSchema,
-} from "src/validation/people.schema";
+} from "../validation/people.schema";
 
 export const createPersonController = async (req: Request, res: Response) => {
   try {

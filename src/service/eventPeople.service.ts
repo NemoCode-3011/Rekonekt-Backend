@@ -4,7 +4,7 @@ import {
   getAdminPeopleByEventQuery,
   getPeopleByEventQuery,
   removeEventPersonQuery,
-} from "src/model/eventPeople.queries";
+} from "../model/eventPeople.queries";
 
 export const addEventPersonService = async (eventId: number, personId: number) => {
   const result = await pool.query(addEventPersonQuery, [eventId, personId]);

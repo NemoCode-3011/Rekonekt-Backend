@@ -1,4 +1,4 @@
-import { requireRole } from "@middleware/authorize";
+import { requireRole } from "../middleware/authorize";
 import { Router } from "express";
 import { getAdminEventMediaController } from "../controller/mediaAttachment.controller";
 import { verifyUser } from "../middleware/auth.middleware";

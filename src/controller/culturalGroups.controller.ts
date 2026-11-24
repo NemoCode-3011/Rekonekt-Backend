@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
-import { getCulturalGroupsService } from "src/service/culturalGroups.service";
+import { sendResponse } from "../utils/response";
+import { getCulturalGroupsService } from "../service/culturalGroups.service";
 
 export const getCulturalGroupsController = async (
   _req: Request,

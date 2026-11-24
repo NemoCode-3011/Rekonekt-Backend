@@ -5,7 +5,7 @@ import {
   getSourceLinkByIdQuery,
   updateSourceLinkQuery,
   deleteSourceLinkQuery,
-} from "src/model/sourceLink.queries";
+} from "../model/sourceLink.queries";
 import type { SourceLink } from "../types/contentRelationships";
 
 export const createSourceLinkService = async (data: {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { sendResponse } from "src/utils/response";
-import { authenticateWithGoogle } from "src/service/googleAuth.service";
-import { googleAuthSchema } from "src/validation/auth.schema";
+import { sendResponse } from "../utils/response";
+import { authenticateWithGoogle } from "../service/googleAuth.service";
+import { googleAuthSchema } from "../validation/auth.schema";
 import { sessionCookieOptions } from "../utils/cookies";
 
 export const googleAuthController = async (req: Request, res: Response) => {

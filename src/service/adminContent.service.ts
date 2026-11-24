@@ -1,4 +1,4 @@
-import { pool } from "src/database/db";
+import { pool } from "../database/db";
 
 // Tables with a draft/published status that are managed here.
 // Table names can't be query parameters, so this list is fixed on purpose.

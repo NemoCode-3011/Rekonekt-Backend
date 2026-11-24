@@ -27,7 +27,7 @@ import {
   createAdminSchema,
   setupAdminPasswordSchema,
   signInSchema,
-} from "src/validation/auth.schema";
+} from "../validation/auth.schema";
 import {
   sessionCookieOptions,
   clearSessionCookieOptions,
