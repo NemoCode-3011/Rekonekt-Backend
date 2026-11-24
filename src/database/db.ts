@@ -46,6 +46,13 @@ export const pool = new Pool({
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
   ssl: process.env.DB_SSL === "true" ? {} : false,
+  connectionTimeoutMillis: 10_000, // Neon can take a few seconds to wake up
+});
+
+// Neon closes idle connections. Without this handler, that drop is an
+// unhandled error event and can crash the whole server.
+pool.on("error", (error) => {
+  console.error("Unexpected idle database client error:", error.message);
 });
 
 export const isDBConnected = async () => {

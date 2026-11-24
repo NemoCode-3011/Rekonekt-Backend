@@ -13,3 +13,19 @@ export const normalizeClientOrigin = (clientUrl: string) => {
 
   return url.origin;
 };
+
+// The one place that decides the frontend URL (CORS, email links).
+// In production CLIENT_URL must be set, so a missing value fails
+// at startup instead of silently pointing somewhere else.
+export const getClientUrl = () => {
+  const raw = process.env.CLIENT_URL;
+
+  if (!raw) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("CLIENT_URL must be set in production.");
+    }
+    return normalizeClientOrigin("http://localhost:5173");
+  }
+
+  return normalizeClientOrigin(raw);
+};

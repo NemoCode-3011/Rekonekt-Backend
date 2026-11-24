@@ -2,13 +2,12 @@ import { SESSION_TTL_SECONDS } from "./sessions";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const sameSite: "none" | "lax" =
-  process.env.CROSS_SITE_COOKIES === "true" ? "none" : "lax";
-
+// The frontend proxies /api to this server, so the browser sees one site and
+// a plain "lax" cookie is enough (no cross-site cookie settings needed).
 const baseOptions = {
   httpOnly: true,
-  secure: isProduction || sameSite === "none",
-  sameSite,
+  secure: isProduction,
+  sameSite: "lax" as const,
 };
 
 export const sessionCookieOptions = {

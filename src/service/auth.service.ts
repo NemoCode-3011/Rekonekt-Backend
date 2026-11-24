@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { getClientUrl } from "../config/clientOrigin";
 import { pool } from "../database/db";
 import { redisClient } from "../config/redis";
 import {
@@ -419,9 +420,7 @@ export const createAdminService = async (data: {
       EX: 60 * 60,
     });
 
-    const clientUrl = (
-      process.env.CLIENT_URL ?? "http://localhost:5173"
-    ).replace(/\/+$/, "");
+    const clientUrl = getClientUrl();
     await sendAdminSetupEmail(
       result.rows[0].name,
       result.rows[0].email,

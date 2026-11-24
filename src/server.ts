@@ -34,18 +34,29 @@ import cors from "cors";
 import { errorHandler, notFoundHandler } from "@middleware/errorHandler";
 import { publicReadLimiter } from "@middleware/rateLimit.middleware";
 import { verifyRequestOrigin } from "@middleware/requestOrigin.middleware";
-import { normalizeClientOrigin } from "@config/clientOrigin";
+import { getClientUrl } from "@config/clientOrigin";
 
 dotenv.config();
 
 const app: Application = express();
-app.set("trust proxy", 1);
+// Requests reach this app through two proxies (Vercel, then Render), so trust
+// two hops to see the real visitor IP. Without this every visitor shares
+// one rate-limit bucket. Override with TRUST_PROXY_HOPS if the setup changes.
+const proxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? "", 10);
+app.set("trust proxy", Number.isInteger(proxyHops) && proxyHops >= 0 ? proxyHops : 2);
+
+// Temporary check: set LOG_CLIENT_IP=true on Render, visit the site, then read
+// the logs. "ip" should be your own address, not a Vercel one.
+if (process.env.LOG_CLIENT_IP === "true") {
+  app.use((req, _res, next) => {
+    console.log("client ip:", req.ip, "forwarded chain:", req.ips);
+    next();
+  });
+}
 
 app.use(express.json());
 
-const clientUrl = normalizeClientOrigin(
-  process.env.CLIENT_URL ?? "https://reko-tan.vercel.app/",
-);
+const clientUrl = getClientUrl();
 app.use(
   cors({
     origin: clientUrl,
@@ -64,7 +75,13 @@ app.get("/health", (_req: Request, res: Response) => {
 
 app.use(cookieParser());
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// API docs list every route, so keep them off in production unless asked for.
+if (
+  process.env.NODE_ENV !== "production" ||
+  process.env.ENABLE_API_DOCS === "true"
+) {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Public reading needs no account, so cap how fast one IP can read.
 app.use(publicReadLimiter);
