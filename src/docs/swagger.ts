@@ -69,9 +69,9 @@ const options = {
     openapi: "3.0.0",
 
     info: {
-      title: "REKO API",
+      title: "REKÒ API",
       version: "1.0.0",
-      description: "API for the REKONEKT Digital Museum of Nigerian History",
+      description: "API for REKÒ, a digital museum of Nigerian history",
     },
 
     servers: [
