@@ -9,6 +9,7 @@ import adminRoutes from "./routes/admin.routes";
 import exhibitRoutes from "./routes/exhibitions.routes";
 import sectionRoutes from "./routes/sections.routes";
 import storyRoutes from "./routes/stories.routes";
+import wonderRoutes from "./routes/wonders.routes";
 import eventRoutes from "./routes/event.routes";
 import personRoutes from "./routes/people.routes";
 import placeRoutes from "./routes/places.routes";
@@ -46,7 +47,8 @@ const app: Application = express();
 const proxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? "", 10);
 app.set("trust proxy", Number.isInteger(proxyHops) && proxyHops >= 0 ? proxyHops : 2);
 
-//to check if correct ip
+// Temporary check: set LOG_CLIENT_IP=true on Render, visit the site, then read
+// the logs. "ip" should be your own address, not a Vercel one.
 if (process.env.LOG_CLIENT_IP === "true") {
   app.use((req, _res, next) => {
     console.log(
@@ -66,7 +68,8 @@ const docsEnabled =
   process.env.NODE_ENV !== "production" ||
   process.env.ENABLE_API_DOCS === "true";
 
-// Standard security headers. Swagger UI needs inline scripts
+// Standard security headers. Swagger UI needs inline scripts, so the
+// content-security-policy is only relaxed while the docs are switched on.
 app.use(helmet({ contentSecurityPolicy: docsEnabled ? false : undefined }));
 
 app.use(express.json());
@@ -94,7 +97,7 @@ if (docsEnabled) {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
-
+// Public reading needs no account, so cap how fast one IP can read.
 app.use(publicReadLimiter);
 
 app.use("/auth", authRoutes);
@@ -102,6 +105,7 @@ app.use("/admin", adminRoutes);
 app.use("/exhibitions", exhibitRoutes);
 app.use("/sections", sectionRoutes);
 app.use("/stories", storyRoutes);
+app.use("/wonders", wonderRoutes);
 app.use("/events", eventRoutes);
 app.use("/people", personRoutes);
 app.use("/places", placeRoutes);
@@ -122,7 +126,7 @@ app.use("/experiences", experienceRoutes);
 app.use("/", contentRelationshipRoutes);
 app.use("/cultural-groups", culturalGroupRoutes);
 
-
+// Must come after every route.
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -133,7 +137,7 @@ process.on("unhandledRejection", (reason) => {
 const start = async () => {
   try {
     await connectRedis();
-    
+    // Safe to run on every start: every statement is IF NOT EXISTS.
     await createTables();
     
     app.listen(port, () => {

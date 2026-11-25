@@ -2,7 +2,13 @@ import { pool } from "../database/db";
 
 // Tables with a draft/published status that are managed here.
 // Table names can't be query parameters, so this list is fixed on purpose.
-export type ContentTable = "events" | "artifacts" | "people" | "places" | "stories";
+export type ContentTable =
+  | "events"
+  | "artifacts"
+  | "people"
+  | "places"
+  | "stories"
+  | "wonders";
 
 const orderBy: Record<ContentTable, string> = {
   events: "event_date ASC NULLS LAST, id ASC",
@@ -10,6 +16,7 @@ const orderBy: Record<ContentTable, string> = {
   people: "name ASC",
   places: "name ASC",
   stories: "created_at ASC",
+  wonders: "created_at DESC",
 };
 
 const hasSection: ContentTable[] = ["events", "artifacts", "stories"];

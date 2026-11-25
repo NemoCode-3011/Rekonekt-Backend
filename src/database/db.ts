@@ -45,7 +45,9 @@ export const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
-  ssl: process.env.DB_SSL === "true" ? {} : false,
+  ssl: {
+  rejectUnauthorized: false,
+},
   connectionTimeoutMillis: 10_000, // Neon can take a few seconds to wake up
 });
 
