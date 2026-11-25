@@ -16,7 +16,7 @@ import {
   getAdminsQuery,
   revokeAdminQuery,
   setupAdminPasswordQuery,
-  promoteUserToAdminQuery
+  promoteUserToAdminQuery,
 } from "../model/auth.queries";
 import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
 import { otpGenerator } from "../utils/otpGenerator";
@@ -106,11 +106,7 @@ const checkOtp = async (
     `,
     {
       keys: [codeKey(purpose, email), attemptsKey(purpose, email)],
-      arguments: [
-        String(MAX_OTP_ATTEMPTS),
-        String(OTP_TTL_SECONDS),
-        digest,
-      ],
+      arguments: [String(MAX_OTP_ATTEMPTS), String(OTP_TTL_SECONDS), digest],
     },
   );
   if (!Array.isArray(result) || result.length !== 2) {
@@ -284,12 +280,16 @@ export const verifyOtpService = async (data: {
 
   const otpResult = await checkOtp("verification", email, data.otp);
   if (otpResult.status === "expired") {
-    throw new AuthServiceError("OTP_EXPIRED", "The code expired or was not found", {
-      otpExpired: true,
-      requiresVerification: true,
-      canRequestOtp: true,
-      nextStep: "resend-otp",
-    });
+    throw new AuthServiceError(
+      "OTP_EXPIRED",
+      "The code expired or was not found",
+      {
+        otpExpired: true,
+        requiresVerification: true,
+        canRequestOtp: true,
+        nextStep: "resend-otp",
+      },
+    );
   }
   if (otpResult.status === "attempts-exceeded") {
     throw new AuthServiceError(
@@ -410,7 +410,10 @@ export const createAdminService = async (data: {
 
     if (existingUser) {
       // They already signed up, so keep the account and just change the role.
-      result = await client.query(promoteUserToAdminQuery, [existingUser.id]);
+      result = await client.query(promoteUserToAdminQuery, [
+        existingUser.id,
+        data.name.trim(),
+      ]);
 
       // Role changed between the lookup and the update.
       if (!result.rows[0]) {
@@ -572,11 +575,15 @@ export const resetPasswordService = async (
   const email = cleanEmail(rawEmail);
   const otpResult = await checkOtp("password-reset", email, otp);
   if (otpResult.status === "expired") {
-    throw new AuthServiceError("OTP_EXPIRED", "The code expired or was not found", {
-      otpExpired: true,
-      canRequestOtp: true,
-      nextStep: "forgot-password",
-    });
+    throw new AuthServiceError(
+      "OTP_EXPIRED",
+      "The code expired or was not found",
+      {
+        otpExpired: true,
+        canRequestOtp: true,
+        nextStep: "forgot-password",
+      },
+    );
   }
   if (otpResult.status === "attempts-exceeded") {
     throw new AuthServiceError(
@@ -657,7 +664,10 @@ export const changePasswordService = async (
     throw new AuthServiceError("USER_NOT_FOUND", "User not found");
   }
 
-  const matches = await comparePassword(currentPassword, result.rows[0].password);
+  const matches = await comparePassword(
+    currentPassword,
+    result.rows[0].password,
+  );
 
   if (!matches) {
     throw new AuthServiceError(

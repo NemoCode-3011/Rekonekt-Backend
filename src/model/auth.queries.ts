@@ -194,7 +194,7 @@ export const revokeAdminQuery = `
 
 export const promoteUserToAdminQuery = `
   UPDATE users
-  SET role = 'admin', is_verified = TRUE, updated_at = CURRENT_TIMESTAMP
+  SET name = $2, role = 'admin', is_verified = TRUE, updated_at = CURRENT_TIMESTAMP
   WHERE id = $1 AND role = 'visitor'
   RETURNING id, name, email, role, preferred_language, is_verified, created_at;
 `;
