@@ -238,6 +238,14 @@ export const createAdminController = async (req: Request, res: Response) => {
       return sendResponse(res, 409, error.message);
     }
 
+    if (error.message === "EMAIL_SEND_FAILED") {
+      return sendResponse(
+        res,
+        502,
+        "The invitation email could not be sent, so the admin was not added. Check the email settings and try again.",
+      );
+    }
+
     console.log(error.message || error);
 
     return sendResponse(res, 500, "Internal server error");

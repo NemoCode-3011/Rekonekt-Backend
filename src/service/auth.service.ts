@@ -421,11 +421,16 @@ export const createAdminService = async (data: {
     });
 
     const clientUrl = getClientUrl();
-    await sendAdminSetupEmail(
-      result.rows[0].name,
-      result.rows[0].email,
-      `${clientUrl}/admin/setup-password?token=${encodeURIComponent(setupToken)}`,
-    );
+    try {
+      await sendAdminSetupEmail(
+        result.rows[0].name,
+        result.rows[0].email,
+        `${clientUrl}/admin/setup-password?token=${encodeURIComponent(setupToken)}`,
+      );
+    } catch (emailError: any) {
+      console.error("Admin invite email failed:", emailError?.message);
+      throw new Error("EMAIL_SEND_FAILED");
+    }
     await client.query("COMMIT");
     transactionStarted = false;
 
