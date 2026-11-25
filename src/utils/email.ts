@@ -1,15 +1,49 @@
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
 
 dotenv.config();
 
-const transport = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
+type MailOptions = {
+  from?: string; // ignored; the sender comes from EMAIL_FROM
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+};
+
+// Replaces nodemailer's transport: sends over HTTPS (port 443).
+const transport = {
+  async sendMail({ to, subject, text, html }: MailOptions) {
+    const apiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.EMAIL_FROM;
+
+    if (!apiKey || !senderEmail) {
+      throw new Error("BREVO_API_KEY and EMAIL_FROM must be set");
+    }
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: "REKÒ", email: senderEmail },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Brevo email failed (${response.status}): ${await response.text()}`,
+      );
+    }
   },
-});
+};
 
 export type OtpEmailPurpose = "verification" | "password-reset";
 
