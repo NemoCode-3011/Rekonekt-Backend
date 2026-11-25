@@ -186,7 +186,15 @@ export const getAdminsQuery = `
 
 // Only plain admins can be removed, so a super admin is never touched.
 export const revokeAdminQuery = `
-  DELETE FROM users
+  UPDATE users
+  SET role = 'visitor', updated_at = CURRENT_TIMESTAMP
   WHERE id = $1 AND role = 'admin'
   RETURNING id, name, email, role;
+`;
+
+export const promoteUserToAdminQuery = `
+  UPDATE users
+  SET role = 'admin', is_verified = TRUE, updated_at = CURRENT_TIMESTAMP
+  WHERE id = $1 AND role = 'visitor'
+  RETURNING id, name, email, role, preferred_language, is_verified, created_at;
 `;

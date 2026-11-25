@@ -16,6 +16,7 @@ import {
   getAdminsQuery,
   revokeAdminQuery,
   setupAdminPasswordQuery,
+  promoteUserToAdminQuery
 } from "../model/auth.queries";
 import { sendAdminSetupEmail, sendOtpEmail } from "../utils/email";
 import { otpGenerator } from "../utils/otpGenerator";
@@ -397,21 +398,35 @@ export const createAdminService = async (data: {
     transactionStarted = true;
 
     const email = data.email.trim().toLowerCase();
-    const emailExists = await client.query(getUserByEmail, [email]);
+    const existing = await client.query(getUserByEmail, [email]);
+    const existingUser = existing.rows[0];
 
-    if (emailExists.rows.length > 0) {
-      throw new Error("Email already exists");
+    // Already an admin or super admin: nothing to do.
+    if (existingUser && existingUser.role !== "visitor") {
+      throw new Error("User is already an admin");
     }
 
-    const initialPassword = randomBytes(32).toString("hex");
-    const hashedPassword = await hashPassword(initialPassword);
+    let result;
 
-    const result = await client.query(createAdminQuery, [
-      data.name.trim(),
-      email,
-      hashedPassword,
-      data.preferredLanguage ?? "en",
-    ]);
+    if (existingUser) {
+      // They already signed up, so keep the account and just change the role.
+      result = await client.query(promoteUserToAdminQuery, [existingUser.id]);
+
+      // Role changed between the lookup and the update.
+      if (!result.rows[0]) {
+        throw new Error("User is already an admin");
+      }
+    } else {
+      const initialPassword = randomBytes(32).toString("hex");
+      const hashedPassword = await hashPassword(initialPassword);
+
+      result = await client.query(createAdminQuery, [
+        data.name.trim(),
+        email,
+        hashedPassword,
+        data.preferredLanguage ?? "en",
+      ]);
+    }
 
     const setupToken = randomBytes(32).toString("base64url");
     const tokenDigest = createHash("sha256").update(setupToken).digest("hex");

@@ -234,7 +234,10 @@ export const createAdminController = async (req: Request, res: Response) => {
       results,
     );
   } catch (error: any) {
-    if (error.message === "Email already exists") {
+    if (
+      error.message === "Email already exists" ||
+      error.message === "User is already an admin"
+    ) {
       return sendResponse(res, 409, error.message);
     }
 
