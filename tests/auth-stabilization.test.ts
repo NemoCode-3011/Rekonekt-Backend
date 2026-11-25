@@ -54,37 +54,57 @@ const runAuthApi = async (t: TestContext) => {
     failEmail: false,
     failNextQuery: false,
   };
-  const nodemailer = require("nodemailer");
-  const originalCreateTransport = nodemailer.createTransport;
-  nodemailer.createTransport = () => ({
-    sendMail: async (options: {
-      to: string;
-      subject: string;
-      text: string;
-      html: string;
-    }) => {
-      const otp = options.text.match(/\b\d{6}\b/)?.[0];
+
+  const previousEmailEnv = {
+    BREVO_API_KEY: process.env.BREVO_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+  };
+  process.env.BREVO_API_KEY = "test-key";
+  process.env.EMAIL_FROM = "test@example.com";
+
+  // Intercept only Brevo; let the test's own requests reach the local server.
+  const originalFetch = globalThis.fetch;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      if (!url.startsWith("https://api.brevo.com/")) {
+        return originalFetch(input, init);
+      }
+
+      const body = JSON.parse(String(init?.body));
+      const otp = body.textContent?.match(/\b\d{6}\b/)?.[0];
       if (!otp) throw new Error("OTP missing from email");
       state.emails.push({
-        email: options.to,
+        email: body.to[0].email,
         otp,
-        purpose: options.subject.includes("password")
+        purpose: body.subject.includes("password")
           ? "password-reset"
           : "verification",
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
+        subject: body.subject,
+        html: body.htmlContent,
+        text: body.textContent,
       });
       if (state.failEmail) {
         state.failEmail = false;
-        throw new Error("email delivery failed");
+        return new Response("delivery failed", { status: 500 });
       }
-      return { messageId: "test-message" };
+      return new Response("{}", { status: 201 });
     },
-  });
-  const { pool } = require("../src/database/db") as typeof import("../src/database/db");
-  const { redisClient } = require("../src/config/redis") as typeof import("../src/config/redis");
-  const { runRateLimitRedisCommand } = require("./support/rateLimitRedis") as typeof import("./support/rateLimitRedis");
+  );
+
+  const { pool } =
+    require("../src/database/db") as typeof import("../src/database/db");
+  const { redisClient } =
+    require("../src/config/redis") as typeof import("../src/config/redis");
+  const { runRateLimitRedisCommand } =
+    require("./support/rateLimitRedis") as typeof import("./support/rateLimitRedis");
   const {
     createUserQuery,
     getUserByEmail,
@@ -94,7 +114,8 @@ const runAuthApi = async (t: TestContext) => {
     updateUserPasswordByIdQuery,
     updateUserPasswordQuery,
     updateUserVerifiedQuery,
-  } = require("../src/model/auth.queries") as typeof import("../src/model/auth.queries");
+  } =
+    require("../src/model/auth.queries") as typeof import("../src/model/auth.queries");
   const originalQuery = pool.query;
 
   const queryStub = async (query: string, values: unknown[] = []) => {
@@ -159,7 +180,11 @@ const runAuthApi = async (t: TestContext) => {
             );
       if (!user) return { rows: [] };
       user.password = String(values[0]);
-      return { rows: [{ id: user.id, name: user.name, email: user.email, role: user.role }] };
+      return {
+        rows: [
+          { id: user.id, name: user.name, email: user.email, role: user.role },
+        ],
+      };
     }
 
     throw new Error(`Unexpected query: ${query}`);
@@ -243,15 +268,9 @@ const runAuthApi = async (t: TestContext) => {
       return [1, 0];
     },
   );
-  t.mock.method(
-    redisClient,
-    "scanIterator",
-    async function* () {
-      yield [...state.redis.keys()].filter((key) =>
-        key.startsWith("session:"),
-      );
-    },
-  );
+  t.mock.method(redisClient, "scanIterator", async function* () {
+    yield [...state.redis.keys()].filter((key) => key.startsWith("session:"));
+  });
   const rateLimitSettings = [
     "AUTH_LIMIT",
     "SIGNUP_LIMIT",
@@ -269,8 +288,9 @@ const runAuthApi = async (t: TestContext) => {
   );
   for (const key of rateLimitSettings) process.env[key] = "1000";
 
-  const authRoutes =
-    (require("../src/routes/auth.routes") as typeof import("../src/routes/auth.routes")).default;
+  const authRoutes = (
+    require("../src/routes/auth.routes") as typeof import("../src/routes/auth.routes")
+  ).default;
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
@@ -287,7 +307,10 @@ const runAuthApi = async (t: TestContext) => {
       server.closeAllConnections();
     });
     pool.query = originalQuery;
-    nodemailer.createTransport = originalCreateTransport;
+    for (const [key, value] of Object.entries(previousEmailEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
     for (const [key, value] of previousRateLimitSettings) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
@@ -347,99 +370,106 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
   const originalPassword = "InitialPass123!";
   const verificationEmail = "verify@example.com";
 
-  await t.test("registration and existing-account duplicate handling", async () => {
-    const response = await api.request("/auth/signup", {
-      method: "POST",
-      body: {
-        name: "Original User",
-        email: verificationEmail,
-        password: originalPassword,
-      },
-    });
-    assert.equal(response.status, 201);
-    const signupBody = await readBody(response);
-    assert.equal(signupBody.code, "OTP_SENT");
-    assert.equal(signupBody.data?.id, 1);
-    assert.equal(signupBody.data?.otpSent, true);
-    assert.equal(signupBody.data?.requiresVerification, true);
-    assert.equal(signupBody.data?.nextStep, "verify-otp");
-    const verificationEmailSent = api.state.emails[0];
-    assert.equal(verificationEmailSent.purpose, "verification");
-    assert.equal(verificationEmailSent.subject, "Verify your REKÒ account");
-    assert.match(verificationEmailSent.html, /VERIFICATION CODE/);
+  await t.test(
+    "registration and existing-account duplicate handling",
+    async () => {
+      const response = await api.request("/auth/signup", {
+        method: "POST",
+        body: {
+          name: "Original User",
+          email: verificationEmail,
+          password: originalPassword,
+        },
+      });
+      assert.equal(response.status, 201);
+      const signupBody = await readBody(response);
+      assert.equal(signupBody.code, "OTP_SENT");
+      assert.equal(signupBody.data?.id, 1);
+      assert.equal(signupBody.data?.otpSent, true);
+      assert.equal(signupBody.data?.requiresVerification, true);
+      assert.equal(signupBody.data?.nextStep, "verify-otp");
+      const verificationEmailSent = api.state.emails[0];
+      assert.equal(verificationEmailSent.purpose, "verification");
+      assert.equal(verificationEmailSent.subject, "Verify your REKÒ account");
+      assert.match(verificationEmailSent.html, /VERIFICATION CODE/);
 
-    const otp = api.state.emails[0].otp;
-    const reRegistration = await api.request("/auth/signup", {
-      method: "POST",
-      body: {
-        name: "Different Person",
-        email: verificationEmail,
-        password: "ReplacementPass123!",
-      },
-    });
-    assert.equal(reRegistration.status, 409);
-    const unverifiedDuplicate = await readBody(reRegistration);
-    assert.equal(unverifiedDuplicate.code, "EMAIL_REQUIRES_VERIFICATION");
-    assert.equal(unverifiedDuplicate.data?.accountVerified, false);
-    assert.equal(unverifiedDuplicate.data?.canRequestOtp, true);
-    assert.equal(unverifiedDuplicate.data?.nextStep, "resend-otp");
-    assert.equal(api.state.emails.length, 1);
-    assert.equal(api.state.users.get(verificationEmail)?.name, "Original User");
-    assert.equal(
-      await bcrypt.compare(
-        originalPassword,
-        api.state.users.get(verificationEmail)!.password,
-      ),
-      true,
-    );
+      const otp = api.state.emails[0].otp;
+      const reRegistration = await api.request("/auth/signup", {
+        method: "POST",
+        body: {
+          name: "Different Person",
+          email: verificationEmail,
+          password: "ReplacementPass123!",
+        },
+      });
+      assert.equal(reRegistration.status, 409);
+      const unverifiedDuplicate = await readBody(reRegistration);
+      assert.equal(unverifiedDuplicate.code, "EMAIL_REQUIRES_VERIFICATION");
+      assert.equal(unverifiedDuplicate.data?.accountVerified, false);
+      assert.equal(unverifiedDuplicate.data?.canRequestOtp, true);
+      assert.equal(unverifiedDuplicate.data?.nextStep, "resend-otp");
+      assert.equal(api.state.emails.length, 1);
+      assert.equal(
+        api.state.users.get(verificationEmail)?.name,
+        "Original User",
+      );
+      assert.equal(
+        await bcrypt.compare(
+          originalPassword,
+          api.state.users.get(verificationEmail)!.password,
+        ),
+        true,
+      );
 
-    const resendDuringCooldown = await api.request("/auth/resend-otp", {
-      method: "POST",
-      body: { email: verificationEmail },
-    });
-    assert.equal(resendDuringCooldown.status, 429);
-    const cooldownBody = await readBody(resendDuringCooldown);
-    assert.equal(cooldownBody.code, "OTP_COOLDOWN");
-    assert.equal(cooldownBody.data?.cooldownActive, true);
-    assert.equal(cooldownBody.data?.otpAlreadySent, null);
-    assert.ok(Number(cooldownBody.data?.retryAfterSeconds) > 0);
+      const resendDuringCooldown = await api.request("/auth/resend-otp", {
+        method: "POST",
+        body: { email: verificationEmail },
+      });
+      assert.equal(resendDuringCooldown.status, 429);
+      const cooldownBody = await readBody(resendDuringCooldown);
+      assert.equal(cooldownBody.code, "OTP_COOLDOWN");
+      assert.equal(cooldownBody.data?.cooldownActive, true);
+      assert.equal(cooldownBody.data?.otpAlreadySent, null);
+      assert.ok(Number(cooldownBody.data?.retryAfterSeconds) > 0);
 
-    const verified = await api.request("/auth/verify-otp", {
-      method: "POST",
-      body: { email: verificationEmail, otp },
-    });
-    assert.equal(verified.status, 200);
-    assert.equal((await readBody(verified)).code, "EMAIL_VERIFIED");
-    assert.equal(
-      api.state.users.get(verificationEmail)?.is_verified,
-      true,
-    );
+      const verified = await api.request("/auth/verify-otp", {
+        method: "POST",
+        body: { email: verificationEmail, otp },
+      });
+      assert.equal(verified.status, 200);
+      assert.equal((await readBody(verified)).code, "EMAIL_VERIFIED");
+      assert.equal(api.state.users.get(verificationEmail)?.is_verified, true);
 
-    const duplicate = await api.request("/auth/signup", {
-      method: "POST",
-      body: {
-        name: "Another User",
-        email: verificationEmail,
-        password: "OtherPass123!",
-      },
-    });
-    assert.equal(duplicate.status, 409);
-    assert.equal((await readBody(duplicate)).code, "EMAIL_ALREADY_EXISTS");
-    assert.equal(api.state.emails.length, 1);
+      const duplicate = await api.request("/auth/signup", {
+        method: "POST",
+        body: {
+          name: "Another User",
+          email: verificationEmail,
+          password: "OtherPass123!",
+        },
+      });
+      assert.equal(duplicate.status, 409);
+      assert.equal((await readBody(duplicate)).code, "EMAIL_ALREADY_EXISTS");
+      assert.equal(api.state.emails.length, 1);
 
-    const reusedOtp = await api.request("/auth/verify-otp", {
-      method: "POST",
-      body: { email: verificationEmail, otp },
-    });
-    assert.equal(reusedOtp.status, 400);
-    assert.equal((await readBody(reusedOtp)).code, "OTP_EXPIRED");
-  });
+      const reusedOtp = await api.request("/auth/verify-otp", {
+        method: "POST",
+        body: { email: verificationEmail, otp },
+      });
+      assert.equal(reusedOtp.status, 400);
+      assert.equal((await readBody(reusedOtp)).code, "OTP_EXPIRED");
+    },
+  );
 
   await t.test("expired and over-attempt OTPs are rejected", async () => {
     const expiredEmail = "expired@example.com";
     await api.request("/auth/signup", {
       method: "POST",
-      body: { name: "Expired User", email: expiredEmail, password: originalPassword },
+      body: {
+        name: "Expired User",
+        email: expiredEmail,
+        password: originalPassword,
+      },
     });
     const expiredOtp = api.state.emails.at(-1)!.otp;
     api.state.redis.delete(otpKey("verification", expiredEmail));
@@ -453,7 +483,11 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
     const limitedEmail = "limited@example.com";
     await api.request("/auth/signup", {
       method: "POST",
-      body: { name: "Limited User", email: limitedEmail, password: originalPassword },
+      body: {
+        name: "Limited User",
+        email: limitedEmail,
+        password: originalPassword,
+      },
     });
     const limitedOtp = api.state.emails.at(-1)!.otp;
     const invalidOtp = limitedOtp === "000000" ? "000001" : "000000";
@@ -476,191 +510,207 @@ test("auth registration, OTP, recovery, session isolation, and password changes"
     );
   });
 
-  await t.test("password recovery uses a distinct OTP and revokes sessions", async () => {
-    const login = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: originalPassword },
-    });
-    assert.equal(login.status, 200);
-    assert.equal((await readBody(login)).code, "LOGIN_SUCCESS");
-    const oldSession = responseCookie(login);
+  await t.test(
+    "password recovery uses a distinct OTP and revokes sessions",
+    async () => {
+      const login = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: originalPassword },
+      });
+      assert.equal(login.status, 200);
+      assert.equal((await readBody(login)).code, "LOGIN_SUCCESS");
+      const oldSession = responseCookie(login);
 
-    const forgot = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: verificationEmail },
-    });
-    assert.equal(forgot.status, 200);
-    const forgotBody = await readBody(forgot);
-    assert.equal(forgotBody.code, "PASSWORD_RESET_REQUEST_ACCEPTED");
-    assert.equal(forgotBody.data?.otpSent, null);
+      const forgot = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: verificationEmail },
+      });
+      assert.equal(forgot.status, 200);
+      const forgotBody = await readBody(forgot);
+      assert.equal(forgotBody.code, "PASSWORD_RESET_REQUEST_ACCEPTED");
+      assert.equal(forgotBody.data?.otpSent, null);
 
-    const unknownForgot = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: "unknown@example.com" },
-    });
-    assert.equal(unknownForgot.status, 200);
-    assert.deepEqual(await readBody(unknownForgot), forgotBody);
+      const unknownForgot = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: "unknown@example.com" },
+      });
+      assert.equal(unknownForgot.status, 200);
+      assert.deepEqual(await readBody(unknownForgot), forgotBody);
 
-    const repeatedForgot = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: verificationEmail },
-    });
-    assert.equal(repeatedForgot.status, 200);
-    assert.deepEqual(await readBody(repeatedForgot), forgotBody);
-    const recovery = api.state.emails.at(-1)!;
-    assert.equal(recovery.purpose, "password-reset");
-    assert.equal(recovery.subject, "Reset your REKÒ password");
-    assert.match(recovery.html, /PASSWORD RESET CODE/);
-    assert.match(recovery.text, /password reset code/);
+      const repeatedForgot = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: verificationEmail },
+      });
+      assert.equal(repeatedForgot.status, 200);
+      assert.deepEqual(await readBody(repeatedForgot), forgotBody);
+      const recovery = api.state.emails.at(-1)!;
+      assert.equal(recovery.purpose, "password-reset");
+      assert.equal(recovery.subject, "Reset your REKÒ password");
+      assert.match(recovery.html, /PASSWORD RESET CODE/);
+      assert.match(recovery.text, /password reset code/);
 
-    const wrongPurpose = await api.request("/auth/verify-otp", {
-      method: "POST",
-      body: { email: verificationEmail, otp: recovery.otp },
-    });
-    assert.equal(wrongPurpose.status, 400);
-    assert.equal((await readBody(wrongPurpose)).code, "OTP_EXPIRED");
+      const wrongPurpose = await api.request("/auth/verify-otp", {
+        method: "POST",
+        body: { email: verificationEmail, otp: recovery.otp },
+      });
+      assert.equal(wrongPurpose.status, 400);
+      assert.equal((await readBody(wrongPurpose)).code, "OTP_EXPIRED");
 
-    const reset = await api.request("/auth/reset-password", {
-      method: "POST",
-      body: {
-        email: verificationEmail,
-        otp: recovery.otp,
-        newPassword: "ResetPass123!",
-      },
-    });
-    assert.equal(reset.status, 200);
-    assert.equal((await readBody(reset)).code, "PASSWORD_RESET");
+      const reset = await api.request("/auth/reset-password", {
+        method: "POST",
+        body: {
+          email: verificationEmail,
+          otp: recovery.otp,
+          newPassword: "ResetPass123!",
+        },
+      });
+      assert.equal(reset.status, 200);
+      assert.equal((await readBody(reset)).code, "PASSWORD_RESET");
 
-    const staleSession = await api.request("/auth/me", { cookie: oldSession });
-    assert.equal(staleSession.status, 401);
-    const oldPassword = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: originalPassword },
-    });
-    assert.equal(oldPassword.status, 401);
-  });
+      const staleSession = await api.request("/auth/me", {
+        cookie: oldSession,
+      });
+      assert.equal(staleSession.status, 401);
+      const oldPassword = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: originalPassword },
+      });
+      assert.equal(oldPassword.status, 401);
+    },
+  );
 
-  await t.test("current-user and logout resolve only the cookie's session", async () => {
-    const aliceFirst = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: "ResetPass123!" },
-    });
-    const aliceFirstCookie = responseCookie(aliceFirst);
-    const bob = await api.addUser("bob@example.com", "BobPass123!");
-    const bobLogin = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: bob.email, password: "BobPass123!" },
-    });
-    const bobCookie = responseCookie(bobLogin);
+  await t.test(
+    "current-user and logout resolve only the cookie's session",
+    async () => {
+      const aliceFirst = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: "ResetPass123!" },
+      });
+      const aliceFirstCookie = responseCookie(aliceFirst);
+      const bob = await api.addUser("bob@example.com", "BobPass123!");
+      const bobLogin = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: bob.email, password: "BobPass123!" },
+      });
+      const bobCookie = responseCookie(bobLogin);
 
-    const aliceMe = await api.request("/auth/me", { cookie: aliceFirstCookie });
-    const bobMe = await api.request("/auth/me", { cookie: bobCookie });
-    assert.equal((await readBody(aliceMe)).data?.email, verificationEmail);
-    assert.equal((await readBody(bobMe)).data?.email, bob.email);
-    assert.equal(aliceMe.headers.get("cache-control"), "private, no-store");
+      const aliceMe = await api.request("/auth/me", {
+        cookie: aliceFirstCookie,
+      });
+      const bobMe = await api.request("/auth/me", { cookie: bobCookie });
+      assert.equal((await readBody(aliceMe)).data?.email, verificationEmail);
+      assert.equal((await readBody(bobMe)).data?.email, bob.email);
+      assert.equal(aliceMe.headers.get("cache-control"), "private, no-store");
 
-    api.state.redis.set("session:malformed", "not-json");
-    const malformedSession = await api.request("/auth/me", {
-      cookie: "sessionId=malformed",
-    });
-    assert.equal(malformedSession.status, 401);
-    assert.equal(api.state.redis.has("session:malformed"), false);
+      api.state.redis.set("session:malformed", "not-json");
+      const malformedSession = await api.request("/auth/me", {
+        cookie: "sessionId=malformed",
+      });
+      assert.equal(malformedSession.status, 401);
+      assert.equal(api.state.redis.has("session:malformed"), false);
 
-    const aliceSecond = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: "ResetPass123!" },
-    });
-    const aliceSecondCookie = responseCookie(aliceSecond);
-    const wrongPassword = await api.request("/auth/change-password", {
-      method: "POST",
-      cookie: aliceSecondCookie,
-      body: {
-        currentPassword: "WrongPass123!",
-        newPassword: "ChangedPass123!",
-      },
-    });
-    assert.equal(wrongPassword.status, 400);
+      const aliceSecond = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: "ResetPass123!" },
+      });
+      const aliceSecondCookie = responseCookie(aliceSecond);
+      const wrongPassword = await api.request("/auth/change-password", {
+        method: "POST",
+        cookie: aliceSecondCookie,
+        body: {
+          currentPassword: "WrongPass123!",
+          newPassword: "ChangedPass123!",
+        },
+      });
+      assert.equal(wrongPassword.status, 400);
 
-    api.state.redis.set("session:malformed-revoke", "not-json");
-    const changed = await api.request("/auth/change-password", {
-      method: "POST",
-      cookie: aliceSecondCookie,
-      body: {
-        currentPassword: "ResetPass123!",
-        newPassword: "ChangedPass123!",
-      },
-    });
-    assert.equal(changed.status, 200);
-    assert.equal((await readBody(changed)).code, "PASSWORD_CHANGED");
+      api.state.redis.set("session:malformed-revoke", "not-json");
+      const changed = await api.request("/auth/change-password", {
+        method: "POST",
+        cookie: aliceSecondCookie,
+        body: {
+          currentPassword: "ResetPass123!",
+          newPassword: "ChangedPass123!",
+        },
+      });
+      assert.equal(changed.status, 200);
+      assert.equal((await readBody(changed)).code, "PASSWORD_CHANGED");
 
-    const revokedAliceSession = await api.request("/auth/me", {
-      cookie: aliceFirstCookie,
-    });
-    const keptAliceSession = await api.request("/auth/me", {
-      cookie: aliceSecondCookie,
-    });
-    assert.equal(revokedAliceSession.status, 401);
-    assert.equal(keptAliceSession.status, 200);
-    assert.equal(api.state.redis.has("session:malformed-revoke"), false);
+      const revokedAliceSession = await api.request("/auth/me", {
+        cookie: aliceFirstCookie,
+      });
+      const keptAliceSession = await api.request("/auth/me", {
+        cookie: aliceSecondCookie,
+      });
+      assert.equal(revokedAliceSession.status, 401);
+      assert.equal(keptAliceSession.status, 200);
+      assert.equal(api.state.redis.has("session:malformed-revoke"), false);
 
-    const oldPassword = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: "ResetPass123!" },
-    });
-    assert.equal(oldPassword.status, 401);
-    const newPassword = await api.request("/auth/signin", {
-      method: "POST",
-      body: { email: verificationEmail, password: "ChangedPass123!" },
-    });
-    assert.equal(newPassword.status, 200);
+      const oldPassword = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: "ResetPass123!" },
+      });
+      assert.equal(oldPassword.status, 401);
+      const newPassword = await api.request("/auth/signin", {
+        method: "POST",
+        body: { email: verificationEmail, password: "ChangedPass123!" },
+      });
+      assert.equal(newPassword.status, 200);
 
-    const logout = await api.request("/auth/logout", {
-      method: "POST",
-      cookie: bobCookie,
-    });
-    assert.equal(logout.status, 200);
-    const loggedOut = await api.request("/auth/me", { cookie: bobCookie });
-    assert.equal(loggedOut.status, 401);
-    const aliceStillAuthenticated = await api.request("/auth/me", {
-      cookie: aliceSecondCookie,
-    });
-    assert.equal(aliceStillAuthenticated.status, 200);
-  });
+      const logout = await api.request("/auth/logout", {
+        method: "POST",
+        cookie: bobCookie,
+      });
+      assert.equal(logout.status, 200);
+      const loggedOut = await api.request("/auth/me", { cookie: bobCookie });
+      assert.equal(loggedOut.status, 401);
+      const aliceStillAuthenticated = await api.request("/auth/me", {
+        cookie: aliceSecondCookie,
+      });
+      assert.equal(aliceStillAuthenticated.status, 200);
+    },
+  );
 
-  await t.test("recovery delivery failures remain private and can be retried", async () => {
-    const retryEmail = "retry@example.com";
-    await api.addUser(retryEmail, originalPassword);
-    api.state.failEmail = true;
-    const failedDelivery = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: retryEmail },
-    });
-    assert.equal(failedDelivery.status, 200);
-    assert.equal(
-      (await readBody(failedDelivery)).code,
-      "PASSWORD_RESET_REQUEST_ACCEPTED",
-    );
-    assert.equal(
-      api.state.redis.has(otpKey("password-reset", retryEmail)),
-      false,
-    );
+  await t.test(
+    "recovery delivery failures remain private and can be retried",
+    async () => {
+      const retryEmail = "retry@example.com";
+      await api.addUser(retryEmail, originalPassword);
+      api.state.failEmail = true;
+      const failedDelivery = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: retryEmail },
+      });
+      assert.equal(failedDelivery.status, 200);
+      assert.equal(
+        (await readBody(failedDelivery)).code,
+        "PASSWORD_RESET_REQUEST_ACCEPTED",
+      );
+      assert.equal(
+        api.state.redis.has(otpKey("password-reset", retryEmail)),
+        false,
+      );
 
-    const retry = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: retryEmail },
-    });
-    assert.equal(retry.status, 200);
-    assert.equal(
-      api.state.emails.filter((email) => email.email === retryEmail).length,
-      2,
-    );
+      const retry = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: retryEmail },
+      });
+      assert.equal(retry.status, 200);
+      assert.equal(
+        api.state.emails.filter((email) => email.email === retryEmail).length,
+        2,
+      );
 
-    api.state.failNextQuery = true;
-    const databaseFailure = await api.request("/auth/forgot-password", {
-      method: "POST",
-      body: { email: "database-error@example.com" },
-    });
-    assert.equal(databaseFailure.status, 500);
-    assert.equal((await readBody(databaseFailure)).message, "Internal server error");
-  });
+      api.state.failNextQuery = true;
+      const databaseFailure = await api.request("/auth/forgot-password", {
+        method: "POST",
+        body: { email: "database-error@example.com" },
+      });
+      assert.equal(databaseFailure.status, 500);
+      assert.equal(
+        (await readBody(databaseFailure)).message,
+        "Internal server error",
+      );
+    },
+  );
 });
