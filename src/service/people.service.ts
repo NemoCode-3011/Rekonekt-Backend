@@ -7,6 +7,7 @@ import {
   updatePersonQuery,
   deletePersonQuery,
   getPersonBySlugQuery,
+  getPeopleBundlesQuery
 } from "../model/people.queries";
 
 export const createPersonService = async (data: {
@@ -102,4 +103,10 @@ export const getPersonBySlugService = async (slug: string) => {
   }
 
   return result.rows[0];
+};
+
+export const getPeopleBundlesService = async () => {
+  const result = await pool.query(getPeopleBundlesQuery);
+
+  return result.rows;
 };

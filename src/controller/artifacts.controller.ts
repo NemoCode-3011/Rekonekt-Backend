@@ -7,6 +7,7 @@ import {
   updateArtifact,
   deleteArtifact,
   getArtifactBySlug,
+  getArtifactBundlesService
 } from "../service/artifacts.service";
 import { sendResponse } from "../utils/response";
 import {
@@ -184,6 +185,19 @@ export const getArtifactBySlugController = async (
     }
 
     return sendResponse(res, 200, "Artifact retrieved successfully", artifact);
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getArtifactBundlesController = async (
+  _req: Request,
+  res: Response,
+) => {
+  try {
+    const bundles = await getArtifactBundlesService();
+
+    return sendResponse(res, 200, "Artifact bundles retrieved", bundles);
   } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");

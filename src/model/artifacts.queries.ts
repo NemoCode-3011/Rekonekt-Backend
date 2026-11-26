@@ -1,4 +1,5 @@
 import { publicChild } from "./visibility";
+import { bundleQuery, firstImage } from "./bundleShape";
 
 export const createArtifactQuery = `
   INSERT INTO artifacts (
@@ -64,3 +65,17 @@ export const getArtifactBySlugQuery = `
   WHERE a.slug = $1
     AND ${publicChild("a")};
 `;
+// Artifacts belong directly to one chapter (artifacts.section_id).
+export const getArtifactBundlesQuery = bundleQuery(`
+  SELECT
+    s.exhibition_id,
+    a.id,
+    a.slug,
+    a.title,
+    ${firstImage("artifact_id", "a")} AS image_url,
+    s.section_order,
+    0 AS item_order
+  FROM artifacts a
+  JOIN sections s ON s.id = a.section_id
+  WHERE ${publicChild("a")}
+`);

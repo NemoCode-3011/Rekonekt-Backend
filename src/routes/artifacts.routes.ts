@@ -6,6 +6,7 @@ import {
   getArtifactBySlugController,
   updateArtifactController,
   deleteArtifactController,
+  getArtifactBundlesController
 } from "../controller/artifacts.controller";
 import { optionalSession, verifyUser } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/authorize";
@@ -14,8 +15,17 @@ import { createAdminContentController } from "../controller/adminContent.control
 const router = Router();
 
 const admin = createAdminContentController("artifacts", "Artifact");
-router.patch( "/:id/publish", verifyUser, requireRole("admin", "super admin"), admin.publish,);
-router.patch("/:id/unpublish", verifyUser, requireRole("admin", "super admin"),admin.unpublish,
+router.patch(
+  "/:id/publish",
+  verifyUser,
+  requireRole("admin", "super admin"),
+  admin.publish,
+);
+router.patch(
+  "/:id/unpublish",
+  verifyUser,
+  requireRole("admin", "super admin"),
+  admin.unpublish,
 );
 
 router.post(
@@ -42,6 +52,7 @@ router.get(
   requireRole("admin", "super admin"),
   admin.getById,
 );
+router.get("/bundles", optionalSession, getArtifactBundlesController);
 router.get("/:slug", optionalSession, getArtifactBySlugController);
 router.patch(
   "/:id",

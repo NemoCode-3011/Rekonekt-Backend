@@ -7,6 +7,7 @@ import {
   updateArtifactQuery,
   deleteArtifactQuery,
   getArtifactBySlugQuery,
+  getArtifactBundlesQuery
 } from "../model/artifacts.queries";
 
 export const createArtifactService = async (artifactData: {
@@ -106,4 +107,9 @@ export const getArtifactBySlug = async (slug: string) => {
   const result = await pool.query(getArtifactBySlugQuery, [slug]);
 
   return result.rows[0];
+};
+export const getArtifactBundlesService = async () => {
+  const result = await pool.query(getArtifactBundlesQuery);
+
+  return result.rows;
 };

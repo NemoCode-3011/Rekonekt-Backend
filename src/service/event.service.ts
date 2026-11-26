@@ -7,6 +7,7 @@ import {
   updateEventQuery,
   deleteEventQuery,
   getPublishedEventsQuery,
+  getEventBundlesQuery
 } from "../model/event.queries";
 
 export const createEventService = async (data: {
@@ -113,6 +114,12 @@ export const deleteEventService = async (id: number) => {
 };
 export const getPublishedEventsService = async () => {
   const result = await pool.query(getPublishedEventsQuery);
+
+  return result.rows;
+};
+
+export const getEventBundlesService = async () => {
+  const result = await pool.query(getEventBundlesQuery);
 
   return result.rows;
 };

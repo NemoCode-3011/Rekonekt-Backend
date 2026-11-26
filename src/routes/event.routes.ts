@@ -7,6 +7,7 @@ import {
   getPublishedEventsController,
   updateEventController,
   deleteEventController,
+  getEventBundlesController
 } from "../controller/event.controller";
 import {
   optionalSession,
@@ -26,6 +27,7 @@ router.post("/", verifyUser, requireRole("admin", "super admin"), createEventCon
 router.get("/sections/:sectionId", optionalSession, getEventsBySectionController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
+router.get("/bundles", optionalSession, getEventBundlesController);
 router.get("/:id", optionalSession, getEventByIdController);
 router.get("/", optionalSession, getPublishedEventsController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updateEventController);

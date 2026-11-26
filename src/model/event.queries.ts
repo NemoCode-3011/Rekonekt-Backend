@@ -1,4 +1,5 @@
 import { publicChild } from "./visibility";
+import { bundleQuery} from "./bundleShape";
 
 export const createEventQuery = `
   INSERT INTO events (
@@ -55,3 +56,18 @@ export const getPublishedEventsQuery = `
   WHERE ${publicChild("e")}
   ORDER BY e.event_date ASC NULLS LAST;
 `;
+
+// Events belong directly to one chapter (events.section_id).
+export const getEventBundlesQuery = bundleQuery(`
+  SELECT
+    s.exhibition_id,
+    ev.id,
+    ev.slug,
+    ev.title,
+    ev.image_url,
+    s.section_order,
+    COALESCE(EXTRACT(EPOCH FROM ev.event_date), 1e15) AS item_order
+  FROM events ev
+  JOIN sections s ON s.id = ev.section_id
+  WHERE ${publicChild("ev")}
+`);

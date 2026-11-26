@@ -5,6 +5,7 @@ import {
   getPersonBySlugController,
   updatePersonController,
   deletePersonController,
+  getPeopleBundlesController
 } from "../controller/people.controller";
 import {
   optionalSession,
@@ -25,6 +26,7 @@ router.post("/", verifyUser, requireRole("admin", "super admin"), createPersonCo
 router.get("/", optionalSession, getPeopleController);
 router.get("/admin", verifyUser, requireRole("admin", "super admin"), admin.list);
 router.get("/admin/:id", verifyUser, requireRole("admin", "super admin"), admin.getById);
+router.get("/bundles", optionalSession, getPeopleBundlesController);
 router.get("/:slug", optionalSession, getPersonBySlugController);
 router.patch("/:id", verifyUser, requireRole("admin", "super admin"), updatePersonController);
 router.delete("/:id", verifyUser, requireRole("admin", "super admin"), deletePersonController);
