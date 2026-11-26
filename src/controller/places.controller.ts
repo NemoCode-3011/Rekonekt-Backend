@@ -3,6 +3,7 @@ import {
   createPlaceService,
   getPlaces,
   getPlaceFacets,
+  getPlaceBundles,
   getPlaceById,
   getPlaceBySlug,
   updatePlaceService,
@@ -89,6 +90,19 @@ export const getPlaceFacetsController = async (
     const facets = await getPlaceFacets();
 
     return sendResponse(res, 200, "Place filters retrieved", facets);
+  } catch (error: any) {
+    return fail(res, error);
+  }
+};
+
+export const getPlaceBundlesController = async (
+  _req: Request,
+  res: Response,
+) => {
+  try {
+    const bundles = await getPlaceBundles();
+
+    return sendResponse(res, 200, "Place bundles retrieved", bundles);
   } catch (error: any) {
     return fail(res, error);
   }

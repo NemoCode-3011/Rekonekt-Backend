@@ -3,6 +3,7 @@ import {
   createPlaceController,
   getPlacesController,
   getPlaceFacetsController,
+  getPlaceBundlesController,
   getPlaceByIdController,
   getPlaceBySlugController,
   updatePlaceController,
@@ -26,6 +27,7 @@ router.get("/", optionalSession, getPlacesController);
 
 // These fixed words must stay above "/:id".
 router.get("/facets", optionalSession, getPlaceFacetsController);
+router.get("/bundles", optionalSession, getPlaceBundlesController);
 router.get("/admin", ...adminOnly, admin.list);
 router.get("/admin/:id", ...adminOnly, admin.getById);
 router.get("/slug/:slug", optionalSession, getPlaceBySlugController);

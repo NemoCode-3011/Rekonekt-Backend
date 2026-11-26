@@ -48,6 +48,53 @@ export const getPlaceFacetsQuery = `
     AND pl.latitude IS NOT NULL AND pl.longitude IS NOT NULL;
 `;
 
+// Each published exhibition with the published places inside its chapters, for the
+// browse page's exhibition tiles. A place used in several chapters of one exhibition
+// is listed once. Places come in chapter order, then in the order set in the chapter.
+export const getPlaceBundlesQuery = `
+  SELECT
+    e.id,
+    e.title,
+    e.slug,
+    e.subtitle,
+    e.cover_image_url,
+    COUNT(*)::int AS place_count,
+    json_agg(
+      json_build_object(
+        'id', member.id,
+        'name', member.name,
+        'slug', member.slug,
+        'region', member.region,
+        'category', member.category,
+        'cover_image_url', member.cover_image_url,
+        'cover_image_alt', member.cover_image_alt
+      )
+      ORDER BY member.section_order ASC, member.display_order ASC, member.name ASC
+    ) AS places
+  FROM exhibitions e
+  JOIN (
+    SELECT
+      s.exhibition_id,
+      pl.id,
+      pl.name,
+      pl.slug,
+      pl.region,
+      pl.category,
+      pl.cover_image_url,
+      pl.cover_image_alt,
+      MIN(s.section_order) AS section_order,
+      MIN(spl.display_order) AS display_order
+    FROM section_places spl
+    JOIN sections s ON s.id = spl.section_id
+    JOIN places pl ON pl.id = spl.place_id
+    WHERE ${publicStandalone("pl")}
+    GROUP BY s.exhibition_id, pl.id
+  ) member ON member.exhibition_id = e.id
+  WHERE e.status = 'published'
+  GROUP BY e.id
+  ORDER BY e.published_at DESC NULLS LAST, e.id DESC;
+`;
+
 export const getPlaceByIdQuery = `
   SELECT pl.*
   FROM places pl

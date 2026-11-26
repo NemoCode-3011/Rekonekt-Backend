@@ -3,6 +3,7 @@ import {
   createPlaceQuery,
   getPlacesQuery,
   getPlaceFacetsQuery,
+  getPlaceBundlesQuery,
   getPlaceByIdQuery,
   getPlaceBySlugQuery,
   getPlaceEventsQuery,
@@ -100,6 +101,13 @@ export const getPlaceFacets = async () => {
     total: single("total"),
     pinned: single("pinned"),
   };
+};
+
+// Published exhibitions that contain published places, each with those places.
+export const getPlaceBundles = async () => {
+  const result = await pool.query(getPlaceBundlesQuery);
+
+  return result.rows;
 };
 
 export const getPlaceById = async (id: number) => {
