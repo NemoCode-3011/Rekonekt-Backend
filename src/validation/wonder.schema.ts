@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseYouTubeVideoUrl } from "../utils/youtube";
 
 // The kinds of hidden wonder. To add one, add it here and in the frontend's
 // wonder types list. No database change is needed.
@@ -88,7 +89,14 @@ const coverImageCredit = z
   .max(500, "Image credit must not exceed 500 characters");
 
 const coverImageUrl = webUrl("Invalid cover image URL");
-const videoUrl = webUrl("Invalid video link");
+// Only YouTube links are accepted, so the page can safely show them as an embedded video.
+const videoUrl = z
+  .string()
+  .trim()
+  .refine(
+    (value) => parseYouTubeVideoUrl(value) !== null,
+    "Use a YouTube link, for example https://www.youtube.com/watch?v=...",
+  );
 
 const pinIsComplete = (value: {
   latitude?: number | null;

@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { parseYouTubeVideoUrl } from "../utils/youtube";
 import { pool } from "../database/db";
 import {
   createWonderQuery,
@@ -37,6 +38,14 @@ const saveReferences = async (
   }
 };
 
+// Adds the address the page uses to show the video (null if there is no video).
+const withVideoEmbed = <T extends { video_url: string | null }>(wonder: T) => ({
+  ...wonder,
+  video_embed_url: wonder.video_url
+    ? (parseYouTubeVideoUrl(wonder.video_url)?.embedUrl ?? null)
+    : null,
+});
+
 const readReferences = async (wonderId: number) => {
   const result = await pool.query(getWonderReferencesQuery, [wonderId]);
 
@@ -68,7 +77,10 @@ export const createWonderService = async (data: CreateWonderInput) => {
     await saveReferences(client, wonder.id, data.references ?? []);
     await client.query("COMMIT");
 
-    return { ...wonder, references: await readReferences(wonder.id) };
+    return {
+      ...withVideoEmbed(wonder),
+      references: await readReferences(wonder.id),
+    };
   } catch (error: any) {
     await client.query("ROLLBACK");
 
@@ -124,7 +136,10 @@ export const updateWonderService = async (
 
     await client.query("COMMIT");
 
-    return { ...result.rows[0], references: await readReferences(id) };
+    return {
+      ...withVideoEmbed(result.rows[0]),
+      references: await readReferences(id),
+    };
   } catch (error: any) {
     await client.query("ROLLBACK");
 
@@ -162,7 +177,10 @@ export const getWonderBySlugService = async (slug: string) => {
     return undefined;
   }
 
-  return { ...wonder, references: await readReferences(wonder.id) };
+  return {
+    ...withVideoEmbed(wonder),
+    references: await readReferences(wonder.id),
+  };
 };
 
 // For the admin editor: works for drafts too.
@@ -174,5 +192,5 @@ export const getAdminWonderByIdService = async (id: number) => {
     throw new Error("Wonder not found");
   }
 
-  return { ...wonder, references: await readReferences(id) };
+  return { ...withVideoEmbed(wonder), references: await readReferences(id) };
 };

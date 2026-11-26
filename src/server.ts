@@ -72,7 +72,8 @@ const docsEnabled =
 // content-security-policy is only relaxed while the docs are switched on.
 app.use(helmet({ contentSecurityPolicy: docsEnabled ? false : undefined }));
 
-app.use(express.json());
+// Rich text for long events and stories can be bigger than the 100 KB default.
+app.use(express.json({ limit: "1mb" }));
 
 const clientUrl = getClientUrl();
 app.use(

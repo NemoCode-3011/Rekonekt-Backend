@@ -1,6 +1,7 @@
 import { createTables, pool } from "../src/database/db";
 import { up as addContentRelationships } from "./migrations/20261005_content_relationships";
 import { up as addWonders } from "./migrations/20261125_wonders";
+import { up as addPlacesBrowse } from "./migrations/20261126_places_browse";
 
 const runMigrations = async () => {
   try {
@@ -12,6 +13,7 @@ const runMigrations = async () => {
       await client.query("BEGIN");
       await addContentRelationships(client);
       await addWonders(client);
+      await addPlacesBrowse(client);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");

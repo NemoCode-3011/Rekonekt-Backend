@@ -16,15 +16,22 @@ export const searchPublishedContentQuery = `
    WHERE ${publicChild("e")} AND (e.title ILIKE $1 OR e.description ILIKE $1)
    ORDER BY e.title LIMIT 6)
   UNION ALL
-  (SELECT 'place', pl.id, pl.name, NULL::varchar, pl.description::text
+  (SELECT 'place', pl.id, pl.name, pl.slug, COALESCE(pl.summary, pl.description)::text
    FROM places pl
-   WHERE ${publicStandalone("pl")} AND (pl.name ILIKE $1 OR pl.description ILIKE $1)
+   WHERE ${publicStandalone("pl")}
+     AND (pl.name ILIKE $1 OR pl.summary ILIKE $1 OR pl.description ILIKE $1 OR pl.region ILIKE $1)
    ORDER BY pl.name LIMIT 6)
   UNION ALL
   (SELECT 'artifact', a.id, a.title, a.slug, a.description::text
    FROM artifacts a
    WHERE ${publicChild("a")} AND (a.title ILIKE $1 OR a.description ILIKE $1)
    ORDER BY a.title LIMIT 6)
+  UNION ALL
+  (SELECT 'wonder', w.id, w.title, w.slug, w.summary::text
+   FROM wonders w
+   WHERE ${publicStandalone("w")}
+     AND (w.title ILIKE $1 OR w.summary ILIKE $1 OR w.region ILIKE $1 OR w.content ILIKE $1)
+   ORDER BY w.title LIMIT 6)
   UNION ALL
   (SELECT 'story', s.id, s.title, s.slug, s.excerpt::text
    FROM stories s
