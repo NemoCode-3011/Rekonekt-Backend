@@ -24,7 +24,7 @@ export const createArtifactController = async (req: Request, res: Response) => {
     }
 
     const {
-      sectionId,
+      sectionId = null,
       title,
       slug,
       artifactType,

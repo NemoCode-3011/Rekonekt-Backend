@@ -45,6 +45,7 @@ const authErrorStatus: Record<string, number> = {
   OTP_DELIVERY_FAILED: 503,
   CURRENT_PASSWORD_INCORRECT: 400,
   USER_NOT_FOUND: 404,
+  WRONG_SIGN_IN_PAGE: 403,
 };
 
 const sendAuthResponse = (
@@ -153,10 +154,11 @@ export const signInController = async (req: Request, res: Response) => {
       );
     }
 
-    const { email, password } = validation.data;
+    const { email, password, portal } = validation.data;
     const results = await signInService({
       email,
       password,
+      portal,
     });
     res.cookie("sessionId", results.sessionId, sessionCookieOptions);
 

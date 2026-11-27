@@ -1,5 +1,5 @@
 import { publicChild, publicStandalone } from "./visibility";
-
+import { foldSql } from "./searchFold";
 export const createPlaceQuery = `
   INSERT INTO places (
     name, slug, description, summary, region, category,
@@ -17,11 +17,11 @@ export const getPlacesQuery = `
   WHERE ${publicStandalone("pl")}
     AND ($1::text IS NULL OR pl.region = $1)
     AND ($2::text IS NULL OR pl.category = $2)
-    AND (
+        AND (
       $3::text IS NULL
-      OR pl.name ILIKE $3
-      OR pl.summary ILIKE $3
-      OR pl.region ILIKE $3
+      OR ${foldSql("pl.name")} LIKE $3
+      OR ${foldSql("pl.summary")} LIKE $3
+      OR ${foldSql("pl.region")} LIKE $3
     )
   ORDER BY pl.name ASC;
 `;

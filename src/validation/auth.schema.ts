@@ -18,6 +18,8 @@ export const signupSchema = z.object({
 export const signInSchema = z.object({
   email: emailField,
   password: z.string().min(1, "Password is required"),
+  // Requests that don't say where they came from are treated as the visitor page.
+  portal: z.enum(["visitor", "admin"]).default("visitor"),
 });
 
 export const verifyOtpSchema = z.object({

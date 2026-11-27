@@ -7,11 +7,11 @@ import {
   updateArtifactQuery,
   deleteArtifactQuery,
   getArtifactBySlugQuery,
-  getArtifactBundlesQuery
+  getArtifactBundlesQuery,
 } from "../model/artifacts.queries";
 
 export const createArtifactService = async (artifactData: {
-  sectionId: number;
+  sectionId: number | null;
   title: string;
   slug: string;
   artifactType: string | null;

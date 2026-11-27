@@ -18,6 +18,7 @@ import type {
   CreatePlaceInput,
   UpdatePlaceInput,
 } from "../validation/place.schema";
+import { foldText } from "../utils/searchText";
 
 const SLUG_TAKEN = "Place slug already exists";
 const MAX_SLUG_TRIES = 20;
@@ -65,7 +66,7 @@ export const getPlaces = async (filters: PlaceFilters = {}) => {
   const search = filters.search?.trim();
   // % and _ typed by a visitor are plain characters, not wildcards.
   const pattern = search
-    ? `%${search.replace(/[\\%_]/g, "\\$&")}%`
+    ? `%${foldText(search).replace(/[\\%_]/g, "\\$&")}%`
     : null;
 
   const result = await pool.query(getPlacesQuery, [

@@ -332,10 +332,7 @@ export const verifyOtpService = async (data: {
   };
 };
 
-export const signInService = async (data: {
-  email: string;
-  password: string;
-}) => {
+export const signInService = async (data: {email: string; password: string;  portal: "visitor" | "admin";}) => {
   const email = cleanEmail(data.email);
   const result = await pool.query(getUserByEmail, [email]);
 
@@ -348,6 +345,22 @@ export const signInService = async (data: {
 
   if (!isMatch) {
     throw new AuthServiceError("INVALID_CREDENTIALS", "Invalid credentials");
+  }
+
+  const isStaff = user.role === "admin" || user.role === "super admin";
+
+  if (data.portal === "visitor" && isStaff) {
+    throw new AuthServiceError(
+      "WRONG_SIGN_IN_PAGE",
+      "Staff accounts sign in from the admin page.",
+    );
+  }
+
+  if (data.portal === "admin" && !isStaff) {
+    throw new AuthServiceError(
+      "WRONG_SIGN_IN_PAGE",
+      "This account does not have admin access.",
+    );
   }
 
   if (!user.is_verified) {

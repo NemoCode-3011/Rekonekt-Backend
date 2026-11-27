@@ -2,11 +2,10 @@ import { z } from "zod";
 
 export const createArtifactSchema = z.object({
   sectionId: z
-    .number({
-      error: "Section ID is required",
-    })
+    .number({ error: "Section ID must be a number" })
     .int("Section ID must be an integer")
-    .positive("Section ID must be positive"),
+    .positive("Section ID must be positive")
+    .optional(),
 
   title: z
     .string({
@@ -23,7 +22,7 @@ export const createArtifactSchema = z.object({
     .max(255, "Slug must not exceed 255 characters")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must contain only lowercase letters, numbers, and hyphens"
+      "Slug must contain only lowercase letters, numbers, and hyphens",
     ),
 
   artifactType: z
@@ -33,13 +32,9 @@ export const createArtifactSchema = z.object({
     .min(2, "Artifact type must be at least 2 characters")
     .max(100, "Artifact type must not exceed 100 characters"),
 
-  description: z
-    .string()
-    .optional(),
+  description: z.string().optional(),
 
-  historicalContext: z
-    .string()
-    .optional(),
+  historicalContext: z.string().optional(),
 
   dateDisplay: z
     .string()
@@ -53,5 +48,4 @@ export const createArtifactSchema = z.object({
     .optional(),
 });
 
-export const updateArtifactSchema =
-  createArtifactSchema.partial();
+export const updateArtifactSchema = createArtifactSchema.partial();
