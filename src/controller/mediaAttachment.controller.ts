@@ -6,12 +6,14 @@ import {
   getMediaAttachmentById,
   updateMediaAttachment,
   deleteMediaAttachment,
+  getAdminPictures,
 } from "../service/mediaAttachment.service";
 import { sendResponse } from "../utils/response";
 import {
   updateMediaAttachmentSchema,
   createMediaAttachmentSchema,
 } from "../validation/media-attachment.schema";
+import { isPictureOwner } from "../model/mediaAttachments.queries";
 
 export const createMediaAttachmentController = async (
   req: Request,
@@ -190,6 +192,30 @@ export const deleteMediaAttachmentController = async (
       "Media attachment deleted successfully",
       attachment,
     );
+  } catch (error: any) {
+    console.log(error.message || error);
+    return sendResponse(res, 500, "Internal server error");
+  }
+};
+export const getAdminPicturesController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const owner = String(req.params.owner);
+    const id = Number(req.params.id);
+
+    if (!isPictureOwner(owner)) {
+      return sendResponse(res, 400, "Invalid owner");
+    }
+
+    if (Number.isNaN(id)) {
+      return sendResponse(res, 400, "Invalid ID");
+    }
+
+    const pictures = await getAdminPictures(owner, id);
+
+    return sendResponse(res, 200, "Pictures retrieved successfully", pictures);
   } catch (error: any) {
     console.log(error.message || error);
     return sendResponse(res, 500, "Internal server error");

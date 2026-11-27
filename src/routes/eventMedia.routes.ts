@@ -1,6 +1,9 @@
 import { requireRole } from "../middleware/authorize";
 import { Router } from "express";
-import { getAdminEventMediaController } from "../controller/mediaAttachment.controller";
+import {
+  getAdminEventMediaController,
+  getAdminPicturesController,
+} from "../controller/mediaAttachment.controller";
 import { verifyUser } from "../middleware/auth.middleware";
 
 const router = Router();
@@ -11,5 +14,10 @@ router.get(
   requireRole("admin", "super admin"),
   getAdminEventMediaController,
 );
-
+router.get(
+  "/admin/:owner/:id/pictures",
+  verifyUser,
+  requireRole("admin", "super admin"),
+  getAdminPicturesController,
+);
 export default router;

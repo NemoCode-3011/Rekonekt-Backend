@@ -58,3 +58,23 @@ export const deleteMediaAttachmentQuery = `
   WHERE id = $1
   RETURNING id;
 `;
+const pictureOwnerColumns = {
+  people: "person_id",
+  places: "place_id",
+  artifacts: "artifact_id",
+} as const;
+
+export type PictureOwner = keyof typeof pictureOwnerColumns;
+
+export const isPictureOwner = (value: string): value is PictureOwner =>
+  value in pictureOwnerColumns;
+
+// Admins see pictures on drafts too, so this does not use publicAttachment.
+export const getAdminPicturesQuery = (owner: PictureOwner) => `
+  SELECT m.*, ma.id AS attachment_id, ma.display_order
+  FROM media_attachments ma
+  JOIN media m ON m.id = ma.media_id
+  WHERE ma.${pictureOwnerColumns[owner]} = $1
+    AND m.media_type = 'image'
+  ORDER BY ma.display_order ASC, ma.created_at ASC;
+`;

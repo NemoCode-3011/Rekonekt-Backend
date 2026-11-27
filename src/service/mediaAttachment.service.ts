@@ -6,6 +6,8 @@ import {
   getMediaAttachmentByIdQuery,
   updateMediaAttachmentQuery,
   deleteMediaAttachmentQuery,
+  getAdminPicturesQuery,
+  type PictureOwner,
 } from "../model/mediaAttachments.queries";
 import { withVideoEmbed } from "./media.service";
 
@@ -89,4 +91,10 @@ export const deleteMediaAttachment = async (id: number) => {
   const result = await pool.query(deleteMediaAttachmentQuery, [id]);
 
   return result.rows[0];
+};
+
+export const getAdminPictures = async (owner: PictureOwner, id: number) => {
+  const result = await pool.query(getAdminPicturesQuery(owner), [id]);
+
+  return result.rows;
 };
