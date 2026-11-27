@@ -9,7 +9,7 @@ import {
   getArtifactBySlugQuery,
   getArtifactBundlesQuery,
 } from "../model/artifacts.queries";
-
+import { providedKeys } from "../utils/providedKeys";
 export const createArtifactService = async (artifactData: {
   sectionId: number | null;
   title: string;
@@ -61,28 +61,29 @@ export const getArtifactById = async (id: number) => {
 export const updateArtifact = async (
   id: number,
   data: {
-    sectionId: number;
-    title: string;
-    slug: string;
-    artifactType: string | null;
-    description: string | null;
-    historicalContext: string | null;
-    dateDisplay: string | null;
-    placeId: number | null;
+    sectionId?: number | null;
+    title?: string;
+    slug?: string;
+    artifactType?: string;
+    description?: string | null;
+    historicalContext?: string | null;
+    dateDisplay?: string | null;
+    placeId?: number | null;
   },
 ) => {
   const client = await pool.connect();
 
   try {
     const result = await client.query(updateArtifactQuery, [
-      data.sectionId,
-      data.title,
-      data.slug,
-      data.artifactType,
-      data.description,
-      data.historicalContext,
-      data.dateDisplay,
-      data.placeId,
+      data.sectionId ?? null,
+      data.title ?? null,
+      data.slug ?? null,
+      data.artifactType ?? null,
+      data.description ?? null,
+      data.historicalContext ?? null,
+      data.dateDisplay ?? null,
+      data.placeId ?? null,
+      providedKeys(data),
       id,
     ]);
 

@@ -9,6 +9,7 @@ import {
   getPersonBySlugQuery,
   getPeopleBundlesQuery
 } from "../model/people.queries";
+import { providedKeys } from "../utils/providedKeys";
 
 export const createPersonService = async (data: {
   name: string;
@@ -55,21 +56,22 @@ export const getPersonByIdService = async (id: number) => {
 export const updatePersonService = async (
   id: number,
   data: {
-    name: string;
-    slug: string;
-    description?: string;
-    birthDate?: string;
-    deathDate?: string;
+    name?: string;
+    slug?: string;
+    description?: string | null;
+    birthDate?: string | null;
+    deathDate?: string | null;
   },
 ) => {
   try {
     const result = await pool.query(updatePersonQuery, [
-        data.name,
-        data.slug,
-        data.description,
-        data.birthDate,
-        data.deathDate,
-        id,
+      data.name ?? null,
+      data.slug ?? null,
+      data.description ?? null,
+      data.birthDate ?? null,
+      data.deathDate ?? null,
+      providedKeys(data),
+      id,
     ]);
 
     if (result.rows.length === 0) {

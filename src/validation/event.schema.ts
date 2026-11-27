@@ -25,27 +25,19 @@ export const createEventSchema = z.object({
     .max(255, "Slug must not exceed 255 characters")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must contain only lowercase letters, numbers, and hyphens"
+      "Slug must contain only lowercase letters, numbers, and hyphens",
     ),
 
-  description: z
-    .string()
-    .optional(),
+  description: z.string().optional(),
 
-  eventDate: z
-    .string()
-    .date("Invalid event date")
-    .optional(),
+  eventDate: z.string().date("Invalid event date").optional(),
 
   dateDisplay: z
     .string()
     .max(100, "Date display must not exceed 100 characters")
     .optional(),
 
-  imageUrl: z
-    .string()
-    .url("Invalid image URL")
-    .optional(),
+  imageUrl: z.string().url("Invalid image URL").optional(),
 });
 
 export const updateEventSchema = createEventSchema
@@ -60,4 +52,12 @@ export const updateEventSchema = createEventSchema
       .positive("Section ID must be positive")
       .nullable()
       .optional(),
+    description: z.string().nullable().optional(),
+    eventDate: z.string().date("Invalid event date").nullable().optional(),
+    dateDisplay: z
+      .string()
+      .max(100, "Date display must not exceed 100 characters")
+      .nullable()
+      .optional(),
+    imageUrl: z.string().url("Invalid image URL").nullable().optional(),
   });

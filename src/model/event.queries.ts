@@ -1,5 +1,5 @@
 import { publicChild } from "./visibility";
-import { bundleQuery} from "./bundleShape";
+import { bundleQuery } from "./bundleShape";
 
 export const createEventQuery = `
   INSERT INTO events (
@@ -30,21 +30,21 @@ export const getEventByIdQuery = `
     AND ${publicChild("e")};
 `;
 
+// $8 is the list of fields the request sent. Only those can be cleared.
 export const updateEventQuery = `
   UPDATE events
   SET
-    section_id = CASE WHEN $2 THEN $1 ELSE section_id END,
-    title = COALESCE($3, title),
-    slug = COALESCE($4, slug),
-    description = COALESCE($5, description),
-    event_date = COALESCE($6, event_date),
-    date_display = COALESCE($7, date_display),
-    image_url = COALESCE($8, image_url),
+    section_id = CASE WHEN 'sectionId' = ANY($8::text[]) THEN $1 ELSE section_id END,
+    title = COALESCE($2, title),
+    slug = COALESCE($3, slug),
+    description = CASE WHEN 'description' = ANY($8::text[]) THEN $4 ELSE description END,
+    event_date = CASE WHEN 'eventDate' = ANY($8::text[]) THEN $5 ELSE event_date END,
+    date_display = CASE WHEN 'dateDisplay' = ANY($8::text[]) THEN $6 ELSE date_display END,
+    image_url = CASE WHEN 'imageUrl' = ANY($8::text[]) THEN $7 ELSE image_url END,
     updated_at = CURRENT_TIMESTAMP
   WHERE id = $9
   RETURNING *;
 `;
-
 export const deleteEventQuery = `
   DELETE FROM events
   WHERE id = $1

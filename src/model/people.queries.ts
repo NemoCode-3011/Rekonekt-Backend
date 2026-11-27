@@ -12,7 +12,6 @@ export const createPersonQuery = `
   RETURNING *;
 `;
 
-
 export const getPeopleQuery = `
   SELECT p.*
   FROM people p
@@ -33,19 +32,19 @@ export const getPersonBySlugQuery = `
   WHERE p.slug = $1
     AND ${publicStandalone("p")};
 `;
+// $6 is the list of fields the request sent. Only those can be cleared.
 export const updatePersonQuery = `
   UPDATE people
   SET
     name = COALESCE($1, name),
     slug = COALESCE($2, slug),
-    description = COALESCE($3, description),
-    birth_date = COALESCE($4, birth_date),
-    death_date = COALESCE($5, death_date),
+    description = CASE WHEN 'description' = ANY($6::text[]) THEN $3 ELSE description END,
+    birth_date = CASE WHEN 'birthDate' = ANY($6::text[]) THEN $4 ELSE birth_date END,
+    death_date = CASE WHEN 'deathDate' = ANY($6::text[]) THEN $5 ELSE death_date END,
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $6
+  WHERE id = $7
   RETURNING *;
 `;
-
 export const deletePersonQuery = `
   DELETE FROM people
   WHERE id = $1
@@ -69,4 +68,3 @@ export const getPeopleBundlesQuery = bundleQuery(`
   WHERE ${publicStandalone("p")}
   GROUP BY s.exhibition_id, p.id
 `);
-

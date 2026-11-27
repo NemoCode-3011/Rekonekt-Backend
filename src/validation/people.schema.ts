@@ -34,5 +34,8 @@ export const createPersonSchema = z.object({
     .optional(),
 });
 
-export const updatePersonSchema =
-  createPersonSchema.partial();
+export const updatePersonSchema = createPersonSchema.partial().extend({
+  description: z.string().nullable().optional(),
+  birthDate: z.string().date("Invalid birth date").nullable().optional(),
+  deathDate: z.string().date("Invalid death date").nullable().optional(),
+});

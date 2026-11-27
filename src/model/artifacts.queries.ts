@@ -38,19 +38,20 @@ export const getArtifactByIdQuery = `
     AND ${publicChild("a")};
 `;
 
+// $9 is the list of fields the request sent. Only those can be cleared.
 export const updateArtifactQuery = `
   UPDATE artifacts
   SET
-    section_id = COALESCE($1, section_id),
+    section_id = CASE WHEN 'sectionId' = ANY($9::text[]) THEN $1 ELSE section_id END,
     title = COALESCE($2, title),
     slug = COALESCE($3, slug),
     artifact_type = COALESCE($4, artifact_type),
-    description = COALESCE($5, description),
-    historical_context = COALESCE($6, historical_context),
-    date_display = COALESCE($7, date_display),
-    place_id = COALESCE($8, place_id),
+    description = CASE WHEN 'description' = ANY($9::text[]) THEN $5 ELSE description END,
+    historical_context = CASE WHEN 'historicalContext' = ANY($9::text[]) THEN $6 ELSE historical_context END,
+    date_display = CASE WHEN 'dateDisplay' = ANY($9::text[]) THEN $7 ELSE date_display END,
+    place_id = CASE WHEN 'placeId' = ANY($9::text[]) THEN $8 ELSE place_id END,
     updated_at = CURRENT_TIMESTAMP
-  WHERE id = $9
+  WHERE id = $10
   RETURNING *;
 `;
 

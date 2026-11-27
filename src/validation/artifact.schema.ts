@@ -48,4 +48,24 @@ export const createArtifactSchema = z.object({
     .optional(),
 });
 
-export const updateArtifactSchema = createArtifactSchema.partial();
+export const updateArtifactSchema = createArtifactSchema.partial().extend({
+  sectionId: z
+    .number()
+    .int("Section ID must be an integer")
+    .positive("Section ID must be positive")
+    .nullable()
+    .optional(),
+  description: z.string().nullable().optional(),
+  historicalContext: z.string().nullable().optional(),
+  dateDisplay: z
+    .string()
+    .max(100, "Date display must not exceed 100 characters")
+    .nullable()
+    .optional(),
+  placeId: z
+    .number()
+    .int("Place ID must be an integer")
+    .positive("Place ID must be positive")
+    .nullable()
+    .optional(),
+});

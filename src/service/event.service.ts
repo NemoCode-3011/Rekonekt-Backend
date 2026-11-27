@@ -9,7 +9,7 @@ import {
   getPublishedEventsQuery,
   getEventBundlesQuery
 } from "../model/event.queries";
-
+import { providedKeys } from "../utils/providedKeys";
 export const createEventService = async (data: {
   sectionId: number | null;
   title: string;
@@ -66,22 +66,22 @@ export const updateEventService = async (
     sectionId?: number | null;
     title?: string;
     slug?: string;
-    description?: string;
-    eventDate?: string;
-    dateDisplay?: string;
-    imageUrl?: string;
+    description?: string | null;
+    eventDate?: string | null;
+    dateDisplay?: string | null;
+    imageUrl?: string | null;
   },
 ) => {
   try {
     const result = await pool.query(updateEventQuery, [
       data.sectionId ?? null,
-      Object.prototype.hasOwnProperty.call(data, "sectionId"),
       data.title ?? null,
       data.slug ?? null,
       data.description ?? null,
       data.eventDate ?? null,
       data.dateDisplay ?? null,
       data.imageUrl ?? null,
+      providedKeys(data),
       id,
     ]);
 
