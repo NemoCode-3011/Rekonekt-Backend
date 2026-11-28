@@ -200,7 +200,7 @@ export const uploadMediaController = async (req: Request, res: Response) => {
 
     let media;
     try {
-      const media = await createMediaService({
+      media = await createMediaService({
         title,
         mediaType: mediaTypeFromMime(req.file.mimetype),
         fileUrl,
