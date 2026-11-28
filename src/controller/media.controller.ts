@@ -7,7 +7,6 @@ import {
   deleteMedia,
 } from "../service/media.service";
 import { sendResponse } from "../utils/response";
-import { uploadToR2 } from "../service/r2.service";
 import {
   createMediaSchema,
   createYouTubeMediaSchema,
@@ -15,6 +14,12 @@ import {
   uploadMediaSchema,
 } from "../validation/media.schema";
 import { parseYouTubeVideoUrl } from "../utils/youtube";
+import {
+  deleteFromR2,
+  keyFromUrl,
+  removeFileIfUnused,
+  uploadToR2,
+} from "../service/r2.service";
 
 export const createMediaController = async (req: Request, res: Response) => {
   try {
@@ -69,13 +74,8 @@ export const createYouTubeMediaController = async (
       return sendResponse(res, 400, "A valid YouTube video URL is required");
     }
 
-    const {
-      title,
-      caption,
-      description,
-      sourceCredit,
-      license,
-    } = validation.data;
+    const { title, caption, description, sourceCredit, license } =
+      validation.data;
 
     const media = await createMediaService({
       title,
@@ -160,6 +160,11 @@ export const deleteMediaController = async (req: Request, res: Response) => {
     if (!media) {
       return sendResponse(res, 404, "Media not found");
     }
+    try {
+      await removeFileIfUnused(media.file_url);
+    } catch (error) {
+      console.log("Could not remove the file from storage", error);
+    }
 
     return sendResponse(res, 200, "Media deleted successfully", media);
   } catch (error: any) {
@@ -193,15 +198,27 @@ export const uploadMediaController = async (req: Request, res: Response) => {
 
     const fileUrl = await uploadToR2(req.file);
 
-    const media = await createMediaService({
-      title,
-      mediaType: mediaTypeFromMime(req.file.mimetype),
-      fileUrl,
-      caption: caption || undefined,
-      description: description || undefined,
-      sourceCredit: sourceCredit || undefined,
-      license: license || undefined,
-    });
+    let media;
+    try {
+      const media = await createMediaService({
+        title,
+        mediaType: mediaTypeFromMime(req.file.mimetype),
+        fileUrl,
+        caption: caption || undefined,
+        description: description || undefined,
+        sourceCredit: sourceCredit || undefined,
+        license: license || undefined,
+      });
+    } catch (error) {
+      // The file is already in storage; don't leave it behind.
+      const key = keyFromUrl(fileUrl);
+      if (key) {
+        await deleteFromR2(key).catch((cleanupError) =>
+          console.log("Could not remove the unsaved upload", cleanupError),
+        );
+      }
+      throw error;
+    }
 
     return sendResponse(res, 201, "Media uploaded successfully", media);
   } catch (error: any) {

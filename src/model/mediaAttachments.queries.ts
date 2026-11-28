@@ -56,7 +56,7 @@ export const updateMediaAttachmentQuery = `
 export const deleteMediaAttachmentQuery = `
   DELETE FROM media_attachments
   WHERE id = $1
-  RETURNING id;
+  RETURNING id, media_id;
 `;
 const pictureOwnerColumns = {
   people: "person_id",

@@ -1,4 +1,4 @@
-import { createTables, pool } from "../src/database/db";
+import { createTables, pool } from "../database/db";
 import { up as addContentRelationships } from "./migrations/20261005_content_relationships";
 import { up as addWonders } from "./migrations/20261125_wonders";
 import { up as addPlacesBrowse } from "./migrations/20261126_places_browse";

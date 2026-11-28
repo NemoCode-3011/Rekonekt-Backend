@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { slugify } from "../../src/utils/slug";
+import { slugify } from "../../utils/slug";
 
 // Makes places browsable, like Google Arts & Culture: every place gets a web address
 // (slug), a region, a category, a short summary and a cover picture.

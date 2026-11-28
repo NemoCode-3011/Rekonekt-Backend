@@ -46,5 +46,5 @@ export const updateMediaQuery = `
 export const deleteMediaQuery = `
   DELETE FROM media
   WHERE id = $1
-  RETURNING id, title, media_type;
+  RETURNING id, title, media_type, file_url;
 `;
